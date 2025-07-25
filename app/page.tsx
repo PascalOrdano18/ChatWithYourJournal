@@ -1,11 +1,9 @@
 'use client'
+
 import { supabase } from "@/lib/supabase";
-import { VALID_LOADERS } from "next/dist/shared/lib/image-config";
-
-import Link from "next/link";
-
 import { useState, useEffect } from "react";
-
+import { useRouter } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
 
 type Entry = {
   id: string,
@@ -21,9 +19,21 @@ export default function Home() {
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
 
-
   const JOURNAL_ENTRIES_TABLE = 'journal_entries';
+  const user = useUser();
+  const router = useRouter();
 
+
+  useEffect(() => {
+    if(user === null){
+      router.push('/login');
+    }
+  }, [user, router]);
+
+  if(!user) return null;
+
+
+  
   useEffect(() => {
       fetchEntries();
   }, []);
