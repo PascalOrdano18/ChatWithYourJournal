@@ -1,15 +1,24 @@
 'use client'
 
-import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import AuthForm from "../components/AuthForm";
+import { useUser } from "@/hooks/useUser";
 
 export default function LogIn(){
     const [error, setError] = useState('');
+    const {user, loading} = useUser(); 
 
     const router = useRouter();
+        if(!loading && user){
+            router.push('/');
+        }
+    useEffect(() => {
+
+    }, [user, loading, router]);
+
+
 
     const handleLogin = async (email: string, password: string) => {
         const {error} =  await supabase.auth.signInWithPassword({email, password});

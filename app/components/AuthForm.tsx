@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-
 
 type AuthFormProps = {
     type: 'login' | 'signup';
@@ -22,10 +20,8 @@ export default function AuthForm({ type, onSubmit, errorMessage }: AuthFormProps
     }
 
 
-
-
     return(
-        <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <form
         onSubmit={((e) => handleLogin(e))}
         className="bg-white p-8 rounded-xl shadow-md space-y-6 max-w-md w-full text-black"
@@ -79,6 +75,6 @@ export default function AuthForm({ type, onSubmit, errorMessage }: AuthFormProps
             )}
         </p>
       </form>
-    </main>
+    </div>
     );
 }

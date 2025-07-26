@@ -17,26 +17,26 @@ export default function Home() {
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [value, setValue] = useState('');
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
 
   const JOURNAL_ENTRIES_TABLE = 'journal_entries';
-  const user = useUser();
+  const { user, loading } = useUser();
   const router = useRouter();
 
 
   useEffect(() => {
-    if(user === null){
+    if(!loading && user === null){
       router.push('/login');
     }
-  }, [user, router]);
+  }, [user, loading, router]);
 
-  if(!user) return null;
+  if(loading || !user) return null;
 
 
   
-  useEffect(() => {
-      fetchEntries();
-  }, []);
+  // useEffect(() => {
+  //     fetchEntries();
+  // }, []);
   
 
 
@@ -57,7 +57,6 @@ export default function Home() {
 
   async function handleSubmit(e: React.FormEvent){
     e.preventDefault();
-    setLoading(true);
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -71,7 +70,6 @@ export default function Home() {
     }
 
     setValue('');
-    setLoading(false);
     fetchEntries();
   }
 
