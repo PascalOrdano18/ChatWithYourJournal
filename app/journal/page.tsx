@@ -30,7 +30,6 @@ export default function Journal() {
 
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [value, setValue] = useState('');
   const [draft, setDraft] = useState<any>([]);  // current editor JSON
 
   const JOURNAL_ENTRIES_TABLE = 'journal_entries';
@@ -92,10 +91,17 @@ export default function Journal() {
   );
 
 
+  function ReadOnlyNote({ content }: { content: any }) {
+    const editor = useCreateBlockNote({ initialContent: content });
+    return <BlockNoteView editor={editor} editable={false} />;
+  }
+
   const handleSignOut = async() => {
     await supabase.auth.signOut();
     router.push('/');
   }
+
+
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8 md:px-12">
@@ -155,13 +161,13 @@ export default function Journal() {
               {/* Rich-text editor */}
               <JournalEditor
                 key={selectedDate?.toISOString()}        /* remount on day change */
-                initialContent={todaysEntry?.content ?? []}
+                initialContent={todaysEntry?.content}
                 onChange={setDraft}
               />
 
               <button
                 onClick={handleSave}
-                disabled={draft.length === 0}
+                disabled={!draft || draft.length === 0}
                 className="w-full rounded-lg bg-blue-600 px-6 py-3 font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto"
               >
                 Save Entry
@@ -191,12 +197,7 @@ export default function Journal() {
                       className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
                     >
                       {/* read-only BlockNote view */}
-                      <BlockNoteView
-                        editor={useCreateBlockNote({
-                          initialContent: entry.content,
-                        })}
-                        readOnly
-                      />
+                      <ReadOnlyNote content={entry.content} />
                       <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                         <span>
                           Entry date:{" "}
