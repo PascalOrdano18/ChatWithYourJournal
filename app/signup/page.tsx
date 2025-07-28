@@ -15,11 +15,12 @@ export default function SignUp(){
 
     useEffect(() => {
         if(!loading && user){
-            router.push('/');
+            router.push('/journal');
         }
     }, [user, loading, router]);
 
     const handleSignup = async (email: string, password: string) => {
+        setError('');
         const {error} = await supabase.auth.signUp({email, password});
         if(error){
             setError(error.message);
@@ -28,6 +29,13 @@ export default function SignUp(){
             setEmailSent(true);
         }
     }
+
+    if(loading){
+        return (
+            <div>Loading...</div>
+        );
+    }
+    if(user) return null;
     
     return(
         <main className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
