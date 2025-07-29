@@ -29,7 +29,7 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
-        "bg-white p-2 rounded-lg shadow-sm border border-gray-200 [--cell-size:theme(spacing.8)] min-h-[350px] w-full overflow-hidden",
+        "bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 [--cell-size:theme(spacing.8)] min-h-[350px] w-full overflow-hidden",
         className
       )}
       captionLayout={captionLayout}
@@ -51,12 +51,12 @@ function Calendar({
         ),
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-200 transition-colors",
+          "h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors border-gray-200 dark:border-gray-700",
           defaultClassNames.button_previous
         ),
         button_next: cn(
           buttonVariants({ variant: "outline" }),
-          "h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-200 transition-colors",
+          "h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors border-gray-200 dark:border-gray-700",
           defaultClassNames.button_next
         ),
         month_caption: cn(
@@ -64,28 +64,28 @@ function Calendar({
           defaultClassNames.month_caption
         ),
         dropdowns: cn(
-          "w-full flex items-center text-lg font-semibold justify-center h-12 gap-2 text-gray-800",
+          "w-full flex items-center text-lg font-serif font-semibold justify-center h-12 gap-2 text-gray-900 dark:text-white",
           defaultClassNames.dropdowns
         ),
         dropdown_root: cn(
-          "relative border border-gray-300 shadow-sm rounded-md hover:border-blue-300 transition-colors",
+          "relative border border-gray-300 dark:border-gray-600 shadow-sm rounded-md hover:border-gray-400 dark:hover:border-gray-500 transition-colors",
           defaultClassNames.dropdown_root
         ),
         dropdown: cn(
-          "absolute bg-white inset-0 opacity-0 border border-gray-200 rounded-md shadow-lg",
+          "absolute bg-white dark:bg-gray-800 inset-0 opacity-0 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg",
           defaultClassNames.dropdown
         ),
         caption_label: cn(
-          "select-none font-semibold text-lg text-gray-800",
+          "select-none font-serif font-semibold text-lg text-gray-900 dark:text-white",
           captionLayout === "label"
             ? "text-lg"
-            : "rounded-md pl-3 pr-2 flex items-center gap-2 text-lg h-10 hover:bg-gray-50 transition-colors",
+            : "rounded-md pl-3 pr-2 flex items-center gap-2 text-lg h-10 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors",
           defaultClassNames.caption_label
         ),
         table: "w-full border-collapse mt-4",
         weekdays: cn("flex mb-2", defaultClassNames.weekdays),
         weekday: cn(
-          "text-gray-600 rounded-md flex-1 font-medium text-xs text-center py-2 select-none uppercase tracking-wide min-w-0",
+          "text-gray-600 dark:text-gray-400 rounded-md flex-1 font-serif font-medium text-xs text-center py-2 select-none uppercase tracking-wider min-w-0",
           defaultClassNames.weekday
         ),
         week: cn("flex w-full gap-0.5 mb-1.5", defaultClassNames.week),
@@ -94,7 +94,7 @@ function Calendar({
           defaultClassNames.week_number_header
         ),
         week_number: cn(
-          "text-sm select-none text-gray-500 font-medium",
+          "text-sm select-none text-gray-500 dark:text-gray-400 font-serif font-medium",
           defaultClassNames.week_number
         ),
         day: cn(
@@ -102,27 +102,27 @@ function Calendar({
           defaultClassNames.day
         ),
         range_start: cn(
-          "rounded-l-md bg-blue-500 text-white",
+          "rounded-l-md bg-gray-900 dark:bg-white text-white dark:text-gray-900",
           defaultClassNames.range_start
         ),
         range_middle: cn(
-          "rounded-none bg-blue-100 text-blue-800",
+          "rounded-none bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white",
           defaultClassNames.range_middle
         ),
         range_end: cn(
-          "rounded-r-md bg-blue-500 text-white",
+          "rounded-r-md bg-gray-900 dark:bg-white text-white dark:text-gray-900",
           defaultClassNames.range_end
         ),
         today: cn(
-          "bg-blue-50 text-blue-700 font-semibold border-2 border-blue-200 rounded-md",
+          "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-serif font-semibold border-2 border-gray-300 dark:border-gray-600 rounded-md shadow-sm",
           defaultClassNames.today
         ),
         outside: cn(
-          "text-gray-400 hover:text-gray-500",
+          "text-gray-400 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-500",
           defaultClassNames.outside
         ),
         disabled: cn(
-          "text-gray-300 opacity-50 cursor-not-allowed",
+          "text-gray-300 dark:text-gray-700 opacity-50 cursor-not-allowed",
           defaultClassNames.disabled
         ),
         hidden: cn("invisible", defaultClassNames.hidden),
@@ -142,21 +142,21 @@ function Calendar({
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === "left") {
             return (
-              <ChevronLeftIcon className={cn("size-4 text-gray-600", className)} {...props} />
+              <ChevronLeftIcon className={cn("size-4 text-gray-600 dark:text-gray-400", className)} {...props} />
             )
           }
 
           if (orientation === "right") {
             return (
               <ChevronRightIcon
-                className={cn("size-4 text-gray-600", className)}
+                className={cn("size-4 text-gray-600 dark:text-gray-400", className)}
                 {...props}
               />
             )
           }
 
           return (
-            <ChevronDownIcon className={cn("size-4 text-gray-600", className)} {...props} />
+            <ChevronDownIcon className={cn("size-4 text-gray-600 dark:text-gray-400", className)} {...props} />
           )
         },
         DayButton: CalendarDayButton,
@@ -205,13 +205,13 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "h-8 w-full min-w-0 text-xs font-medium transition-all duration-200",
-        "hover:bg-blue-50 hover:text-blue-700 hover:scale-105",
-        "focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1",
-        "data-[selected-single=true]:bg-blue-600 data-[selected-single=true]:text-white data-[selected-single=true]:font-semibold data-[selected-single=true]:shadow-md",
-        "data-[range-middle=true]:bg-blue-100 data-[range-middle=true]:text-blue-800",
-        "data-[range-start=true]:bg-blue-600 data-[range-start=true]:text-white data-[range-start=true]:rounded-l-md",
-        "data-[range-end=true]:bg-blue-600 data-[range-end=true]:text-white data-[range-end=true]:rounded-r-md",
+        "h-8 w-full min-w-0 text-xs font-serif font-medium transition-all duration-200",
+        "hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white hover:scale-105",
+        "focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 focus:ring-offset-1",
+        "data-[selected-single=true]:bg-gray-900 dark:data-[selected-single=true]:bg-white data-[selected-single=true]:text-white dark:data-[selected-single=true]:text-gray-900 data-[selected-single=true]:font-semibold data-[selected-single=true]:shadow-md",
+        "data-[range-middle=true]:bg-gray-200 dark:data-[range-middle=true]:bg-gray-700 data-[range-middle=true]:text-gray-900 dark:data-[range-middle=true]:text-white",
+        "data-[range-start=true]:bg-gray-900 dark:data-[range-start=true]:bg-white data-[range-start=true]:text-white dark:data-[range-start=true]:text-gray-900 data-[range-start=true]:rounded-l-md",
+        "data-[range-end=true]:bg-gray-900 dark:data-[range-end=true]:bg-white data-[range-end=true]:text-white dark:data-[range-end=true]:text-gray-900 data-[range-end=true]:rounded-r-md",
         "rounded-md",
         "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:scale-100",
         defaultClassNames.day,

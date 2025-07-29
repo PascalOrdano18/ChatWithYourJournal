@@ -2,6 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Smooth scrolling and feed enhancements */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+}
+
+/* Feed scroll enhancements */
+.feed-container {
+  scroll-snap-type: y proximity;
+}
+
+.feed-post {
+  scroll-snap-align: start;
+  scroll-margin-top: 1rem;
+}
+
+/* Custom scrollbar for webkit browsers */
+.feed-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.feed-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.feed-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.feed-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark .feed-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .feed-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark .feed-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 :root {
   --radius: 0.625rem;
   --background: 255 255 255;
@@ -30,24 +80,24 @@
 }
 
 .dark {
-  --background: 37 37 37;
-  --foreground: 251 251 251;
-  --card: 37 37 37;
-  --card-foreground: 251 251 251;
-  --popover: 37 37 37;
-  --popover-foreground: 251 251 251;
-  --primary: 251 251 251;
-  --primary-foreground: 37 37 37;
-  --secondary: 68 68 68;
-  --secondary-foreground: 251 251 251;
-  --muted: 68 68 68;
-  --muted-foreground: 181 181 181;
-  --accent: 68 68 68;
-  --accent-foreground: 251 251 251;
+  --background: 15 15 15;
+  --foreground: 245 245 245;
+  --card: 25 25 25;
+  --card-foreground: 245 245 245;
+  --popover: 25 25 25;
+  --popover-foreground: 245 245 245;
+  --primary: 245 245 245;
+  --primary-foreground: 15 15 15;
+  --secondary: 45 45 45;
+  --secondary-foreground: 245 245 245;
+  --muted: 45 45 45;
+  --muted-foreground: 156 163 175;
+  --accent: 45 45 45;
+  --accent-foreground: 245 245 245;
   --destructive: 239 68 68;
-  --border: 68 68 68;
-  --input: 68 68 68;
-  --ring: 212 212 212;
+  --border: 45 45 45;
+  --input: 45 45 45;
+  --ring: 156 163 175;
   --chart-1: 220 38 127;
   --chart-2: 34 197 94;
   --chart-3: 59 130 246;
@@ -59,7 +109,359 @@
   border-color: hsl(var(--border));
 }
 
+html {
+  @apply bg-gray-50 dark:bg-gray-900;
+}
+
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+/* Add serif font classes */
+.font-serif {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+/* Enhanced prose styling for journal entries */
+.prose-journal {
+  --tw-prose-body: rgb(55 65 81);
+  --tw-prose-headings: rgb(17 24 39);
+  --tw-prose-links: rgb(59 130 246);
+  --tw-prose-bold: rgb(17 24 39);
+  --tw-prose-counters: rgb(107 114 128);
+  --tw-prose-bullets: rgb(107 114 128);
+  --tw-prose-hr: rgb(229 231 235);
+  --tw-prose-quotes: rgb(17 24 39);
+  --tw-prose-quote-borders: rgb(229 231 235);
+  --tw-prose-captions: rgb(55 65 81);
+  --tw-prose-code: rgb(17 24 39);
+  --tw-prose-pre-code: rgb(229 231 235);
+  --tw-prose-pre-bg: rgb(249 250 251);
+  --tw-prose-th-borders: rgb(229 231 235);
+  --tw-prose-td-borders: rgb(243 244 246);
+}
+
+/* Dark theme prose styling */
+.dark .prose-journal {
+  --tw-prose-body: rgb(209 213 219);
+  --tw-prose-headings: rgb(243 244 246);
+  --tw-prose-links: rgb(147 197 253);
+  --tw-prose-bold: rgb(243 244 246);
+  --tw-prose-counters: rgb(156 163 175);
+  --tw-prose-bullets: rgb(156 163 175);
+  --tw-prose-hr: rgb(55 65 81);
+  --tw-prose-quotes: rgb(243 244 246);
+  --tw-prose-quote-borders: rgb(55 65 81);
+  --tw-prose-captions: rgb(209 213 219);
+  --tw-prose-code: rgb(243 244 246);
+  --tw-prose-pre-code: rgb(209 213 219);
+  --tw-prose-pre-bg: rgb(31 41 55);
+  --tw-prose-th-borders: rgb(55 65 81);
+  --tw-prose-td-borders: rgb(75 85 99);
+}
+
+/* BlockNote Editor Theme Overrides - Light Theme */
+.bn-container {
+  background-color: transparent !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+}
+
+.bn-editor {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+}
+
+/* Block styling */
+.bn-block-content {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important;
+  border: none !important;
+}
+
+.bn-block-content[data-content-type="paragraph"] {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+}
+
+/* Input and text areas */
+.bn-inline-content,
+.ProseMirror {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.ProseMirror p {
+  color: rgb(55 65 81) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  margin: 0.5rem 0 !important;
+}
+
+.ProseMirror h1, 
+.ProseMirror h2, 
+.ProseMirror h3, 
+.ProseMirror h4, 
+.ProseMirror h5, 
+.ProseMirror h6 {
+  color: rgb(17 24 39) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  font-weight: 600 !important;
+}
+
+/* Block selection and hover states */
+.bn-block:hover,
+.bn-block.bn-block-selected {
+  background-color: rgb(249 250 251) !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Side menu styling */
+.bn-side-menu {
+  background-color: rgb(255 255 255) !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+.bn-side-menu-button {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important;
+  border: none !important;
+}
+
+.bn-side-menu-button:hover {
+  background-color: rgb(243 244 246) !important;
+  color: rgb(17 24 39) !important;
+}
+
+/* Formatting toolbar */
+.bn-formatting-toolbar {
+  background-color: rgb(255 255 255) !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+.bn-formatting-toolbar-button {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important;
+  border: none !important;
+  border-radius: 0.375rem !important;
+}
+
+.bn-formatting-toolbar-button:hover,
+.bn-formatting-toolbar-button[data-selected="true"] {
+  background-color: rgb(243 244 246) !important;
+  color: rgb(17 24 39) !important;
+}
+
+/* Slash menu */
+.bn-slash-menu {
+  background-color: rgb(255 255 255) !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+.bn-slash-menu-item {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+}
+
+.bn-slash-menu-item:hover,
+.bn-slash-menu-item[data-selected="true"] {
+  background-color: rgb(243 244 246) !important;
+  color: rgb(17 24 39) !important;
+}
+
+/* Placeholder text */
+.ProseMirror p.is-empty::before {
+  color: rgb(107 114 128) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  opacity: 0.6 !important;
+}
+
+/* Code blocks and inline code */
+.ProseMirror code {
+  background-color: rgb(249 250 251) !important;
+  color: rgb(17 24 39) !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.25rem !important;
+  padding: 0.125rem 0.25rem !important;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+.ProseMirror pre {
+  background-color: rgb(249 250 251) !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+}
+
+.ProseMirror pre code {
+  background-color: transparent !important;
+  border: none !important;
+  color: rgb(17 24 39) !important;
+}
+
+/* Lists */
+.ProseMirror ul,
+.ProseMirror ol {
+  color: rgb(55 65 81) !important;
+}
+
+.ProseMirror li {
+  color: rgb(55 65 81) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+}
+
+/* Blockquotes */
+.ProseMirror blockquote {
+  border-left: 4px solid rgb(107 114 128) !important;
+  background-color: rgb(249 250 251) !important;
+  color: rgb(17 24 39) !important;
+  font-style: italic !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+  border-radius: 0 0.5rem 0.5rem 0 !important;
+}
+
+/* Links */
+.ProseMirror a {
+  color: rgb(59 130 246) !important;
+  text-decoration: underline !important;
+}
+
+.ProseMirror a:hover {
+  color: rgb(37 99 235) !important;
+}
+
+/* Dark Theme BlockNote Editor Overrides */
+.dark .bn-editor {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .bn-block-content {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .bn-block-content[data-content-type="paragraph"] {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .bn-inline-content,
+.dark .ProseMirror {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .ProseMirror p {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .ProseMirror h1, 
+.dark .ProseMirror h2, 
+.dark .ProseMirror h3, 
+.dark .ProseMirror h4, 
+.dark .ProseMirror h5, 
+.dark .ProseMirror h6 {
+  color: rgb(243 244 246) !important;
+}
+
+.dark .bn-block:hover,
+.dark .bn-block.bn-block-selected {
+  background-color: rgb(31 41 55) !important;
+  border: 1px solid rgb(55 65 81) !important;
+}
+
+.dark .bn-side-menu {
+  background-color: rgb(25 25 25) !important;
+  border: 1px solid rgb(55 65 81) !important;
+}
+
+.dark .bn-side-menu-button {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .bn-side-menu-button:hover {
+  background-color: rgb(55 65 81) !important;
+  color: rgb(243 244 246) !important;
+}
+
+.dark .bn-formatting-toolbar {
+  background-color: rgb(25 25 25) !important;
+  border: 1px solid rgb(55 65 81) !important;
+}
+
+.dark .bn-formatting-toolbar-button {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .bn-formatting-toolbar-button:hover,
+.dark .bn-formatting-toolbar-button[data-selected="true"] {
+  background-color: rgb(55 65 81) !important;
+  color: rgb(243 244 246) !important;
+}
+
+.dark .bn-slash-menu {
+  background-color: rgb(25 25 25) !important;
+  border: 1px solid rgb(55 65 81) !important;
+}
+
+.dark .bn-slash-menu-item {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .bn-slash-menu-item:hover,
+.dark .bn-slash-menu-item[data-selected="true"] {
+  background-color: rgb(55 65 81) !important;
+  color: rgb(243 244 246) !important;
+}
+
+.dark .ProseMirror p.is-empty::before {
+  color: rgb(156 163 175) !important;
+}
+
+.dark .ProseMirror code {
+  background-color: rgb(31 41 55) !important;
+  color: rgb(243 244 246) !important;
+  border: 1px solid rgb(55 65 81) !important;
+}
+
+.dark .ProseMirror pre {
+  background-color: rgb(31 41 55) !important;
+  border: 1px solid rgb(55 65 81) !important;
+}
+
+.dark .ProseMirror pre code {
+  color: rgb(243 244 246) !important;
+}
+
+.dark .ProseMirror ul,
+.dark .ProseMirror ol {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .ProseMirror li {
+  color: rgb(209 213 219) !important;
+}
+
+.dark .ProseMirror blockquote {
+  border-left: 4px solid rgb(156 163 175) !important;
+  background-color: rgb(31 41 55) !important;
+  color: rgb(243 244 246) !important;
+}
+
+.dark .ProseMirror a {
+  color: rgb(147 197 253) !important;
+}
+
+.dark .ProseMirror a:hover {
+  color: rgb(96 165 250) !important;
 }
