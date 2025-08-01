@@ -4,19 +4,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { format, isToday } from "date-fns";
-import { Moon, Sun } from "lucide-react";
 
 import { supabase }  from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/hooks/useTheme";
 import { Calendar } from "@/components/ui/calendar";
+import Navbar from "@/app/components/Navbar";
 
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 
 const JournalEditor = dynamic(
-    () => import("@/app/components/JournalEditor"),
-  { ssr: false }   
+  () => import("@/app/components/JournalEditor"),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="animate-pulse bg-gray-200 dark:bg-gray-600 rounded-lg h-[300px] flex items-center justify-center">
+        <span className="text-gray-500 dark:text-gray-400">Loading editor...</span>
+      </div>
+    )
+  }
 );
 
 
@@ -50,7 +57,13 @@ export default function Journal() {
       fetchEntries();
     }, []);
     
-    if(loading || !user) return null;
+    if(loading || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
+  }
 
   async function fetchEntries() {
     const { data, error } = await supabase
@@ -126,47 +139,13 @@ export default function Journal() {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-6 md:px-12">
-        <div className="mx-auto max-w-7xl flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-serif font-bold text-gray-900 dark:text-white tracking-wide">My Journal</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-300 font-serif italic mt-1">
-              {format(new Date(), "EEEE, MMMM do, yyyy")}
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleSignOut}
-              className="text-sm text-gray-600 dark:text-gray-400 underline hover:text-gray-800 dark:hover:text-gray-200 transition-colors font-medium"
-            >
-              Sign Out
-            </button>
-            <button
-              onClick={toggleTheme}
-              className="inline-flex items-center gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors border border-gray-300 dark:border-gray-600"
-            >
-              {theme === "light" ? (
-                <>
-                  <Moon className="h-4 w-4" />
-                  Dark Mode
-                </>
-              ) : (
-                <>
-                  <Sun className="h-4 w-4" />
-                  Light Mode
-                </>
-              )}
-            </button>
-            {/* Debug indicator */}
-            <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
-              {theme}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar 
+        onSignOut={handleSignOut}
+        onToggleTheme={toggleTheme}
+        theme={theme}
+      />
 
-      <div className="mx-auto max-w-7xl flex gap-8 p-4 md:p-8">
+      <div className="flex gap-8 p-4 md:p-8">
         {/* Sidebar */}
         <aside className="w-80 flex-shrink-0">
           <div className="sticky top-8 space-y-6">
