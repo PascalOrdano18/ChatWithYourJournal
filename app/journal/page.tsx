@@ -123,13 +123,10 @@ export default function Journal() {
     
 
   const entryDates = entries.map((entry) => {
-    const utcDate = new Date(entry.entry_date);
-    const localMidnight = new Date(
-      utcDate.getFullYear(),
-      utcDate.getMonth(),
-      utcDate.getDate()
-    );
-    return localMidnight;
+    // Parse date string as local date, not UTC
+    const [year, month, day] = entry.entry_date.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day); // month is 0-indexed
+    return localDate;
   });
 
   console.log("entryDates:", entryDates.map(d => d.toString()));
