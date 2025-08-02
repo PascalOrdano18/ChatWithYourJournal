@@ -41,7 +41,7 @@ export default function JournalChatPage() {
         onToggleTheme={toggleTheme}
         theme={theme}
       />
-      <div className="p-6">
+      <div className="container mx-auto max-w-5xl px-4 py-6">
         <ChatWithJournal />
       </div>
     </main>
