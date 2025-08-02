@@ -42,6 +42,7 @@ export async function POST(req: Request){
         return NextResponse.json({ answer: "Hubo un problema sorry" });
     }
 
+    // ENTRIES ES NULL, TENGO QUE PASAR EL USER ID PORQUE TENGO EL RLS QUE LO PIDE
     const context = entries
     .map(e => {
         console.log("🧱 ENTRY content from Supabase:", e.content); // <-- Add here
@@ -62,8 +63,6 @@ export async function POST(req: Request){
         
         answer: 
     `;
-    console.log("📨 Final Prompt Sent to Gemini:\n", prompt); // <-- Add here
-
 
 
     // SI USASE OPENAI
