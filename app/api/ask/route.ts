@@ -3,6 +3,25 @@ import { supabase } from "@/lib/supabase";
 import { generateText } from "ai"
 import { google } from "@ai-sdk/google"
 
+
+
+type BlockNoteContent = {
+    type: string;
+    content?: {text: string}[];
+    childer?: any[];
+}
+
+const blockNoteToPlainText = (blocks:BlockNoteContent[]): string => {
+    return blocks
+       .map(block => {
+           const text = block.content?.map(span => span.text).join("") ?? "";
+           return text.trim();
+       })
+       .filter(line => line.length > 0)
+       .join("\n");
+}
+
+
 export async function POST(req: Request){
     const { question } = await req.json();
     
@@ -16,14 +35,23 @@ export async function POST(req: Request){
     .order('entry_date', { ascending: false })
     .limit(30);
 
+    console.log("📘 Raw journal entries:", entries);
+
+
     if(error || !entries){
         return NextResponse.json({ answer: "Hubo un problema sorry" });
     }
 
     const context = entries
-    .map(entry => {
-        `- ${entry.entry_date}: ${entry.content}`
-    }).join('\n');
+    .map(e => {
+        console.log("🧱 ENTRY content from Supabase:", e.content); // <-- Add here
+
+      const text = blockNoteToPlainText(e.content); // use directly
+      return `- ${e.entry_date}: ${text}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+  
 
     const prompt = `You are a journal specialist, ready to chat with a user about its journal. Analyze the context given and answer the question
     
@@ -31,8 +59,11 @@ export async function POST(req: Request){
 
         question: ${question}
 
+        
         answer: 
     `;
+    console.log("📨 Final Prompt Sent to Gemini:\n", prompt); // <-- Add here
+
 
 
     // SI USASE OPENAI
