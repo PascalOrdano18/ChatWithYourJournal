@@ -21,6 +21,28 @@ const blockNoteToPlainText = (blocks:BlockNoteContent[]): string => {
        .join("\n");
 }
 
+// Simple relevance scoring based on keyword matching
+const calculateRelevance = (entryText: string, question: string): number => {
+    const questionWords = question.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+    const entryWords = entryText.toLowerCase().split(/\s+/);
+    
+    let matches = 0;
+    questionWords.forEach(qWord => {
+        if (entryWords.some(eWord => eWord.includes(qWord) || qWord.includes(eWord))) {
+            matches++;
+        }
+    });
+    
+    return matches / questionWords.length;
+}
+
+type JournalEntry = {
+    id: string;
+    entry_date: string;
+    content: any;
+    created_at: string;
+}
+
 
 export async function POST(req: Request){
     const { question } = await req.json();
@@ -44,40 +66,62 @@ export async function POST(req: Request){
     // Query journal entries for the authenticated user
     const { data: entries, error } = await supabase
     .from('journal_entries')
-    .select('entry_date, content')
+    .select('id, entry_date, content, created_at')
     .eq('user_id', user.id)  // Filter by authenticated user's ID
     .order('entry_date', { ascending: false })
     .limit(30);
-
-    console.log("📘 Raw journal entries:", entries);
-    console.log("🔐 Authenticated user ID:", user.id);
-
 
     if(error || !entries){
         return NextResponse.json({ answer: "Hubo un problema sorry" });
     }
 
-    // ✅ Now properly authenticated with user context for RLS
-    const context = entries
-    .map(e => {
-        console.log("🧱 ENTRY content from Supabase:", e.content); 
+    // Calculate relevance scores and find most relevant entries
+    const entriesWithRelevance = entries.map(entry => {
+        const text = blockNoteToPlainText(entry.content);
+        const relevance = calculateRelevance(text, question);
+        return {
+            ...entry,
+            text,
+            relevance
+        };
+    });
 
-      const text = blockNoteToPlainText(e.content);
-      return `- ${e.entry_date}: ${text}`;
-    })
-    .filter(Boolean)
-    .join("\n");
+    // Sort by relevance and get top 5 most relevant entries
+    const relevantEntries = entriesWithRelevance
+        .sort((a, b) => b.relevance - a.relevance)
+        .slice(0, 5);
+
+    // Create context for AI (still using all entries for broader context)
+    const context = entriesWithRelevance
+        .map(e => `- ${e.entry_date}: ${e.text}`)
+        .filter(Boolean)
+        .join("\n");
   
 
-    const prompt = `You are a journal specialist, ready to chat with a user about its journal. Analyze the context given and answer the question
-    
-        context: ${context}
+    const prompt = `
+        You are an empathetic and insightful journal companion. 
+        Your role is to help the user reflect on their past journal entries, find patterns, and answer questions about their experiences. 
 
-        question: ${question}
+        ### Guidelines:
+        - Always ground your answers in the given journal context. 
+        - Be concise, thoughtful, and conversational — like a supportive friend who also analyzes patterns.
+        - If the context is insufficient, say so and offer what could be asked or clarified.
+        - Avoid hallucinating: do not invent details that are not in the journal.
+        - If the user asks for advice, base it only on the context provided.
 
-        
-        answer: 
-    `;
+        ### Data:
+        Journal Context:
+        ${context}
+
+        User Question:
+        ${question}
+
+        ### Task:
+        Provide a clear, reflective, and helpful answer for the user based only on the journal context above.
+        Format your answer as a natural conversation.
+
+        Answer:
+        `;
 
 
     // SI USASE OPENAI
@@ -97,7 +141,19 @@ export async function POST(req: Request){
     prompt: prompt
    })
 
+    // Filter relevant entries to only include those with some relevance (> 0)
+    const entriesToReturn = relevantEntries
+        .filter(entry => entry.relevance > 0)
+        .slice(0, 3) // Limit to top 3 most relevant
+        .map(entry => ({
+            id: entry.id,
+            entry_date: entry.entry_date,
+            content: entry.content,
+            created_at: entry.created_at
+        }));
+
     return NextResponse.json({
-        answer: text
+        answer: text,
+        relatedEntries: entriesToReturn
     });
 }

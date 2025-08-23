@@ -2,11 +2,43 @@
 "use client";
 
 import { useState } from "react";
+import { useCreateBlockNote } from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/shadcn";
+import { format } from "date-fns";
+
+type JournalEntry = {
+    id: string;
+    entry_date: string;
+    content: any; // BlockNote content
+    created_at: string;
+};
 
 type Message = {
-    role: "user" | "assistant",
-    content: string,
+    role: "user" | "assistant";
+    content: string;
+    relatedEntries?: JournalEntry[];
 };
+
+// Component to render BlockNote content in chat
+function ChatJournalEntry({ entry }: { entry: JournalEntry }) {
+    const editor = useCreateBlockNote({ 
+        initialContent: entry.content
+    });
+    
+    return (
+        <div className="p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
+                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300 font-serif">
+                    {format(new Date(entry.entry_date), "MMM do, yyyy")}
+                </span>
+            </div>
+            <div className="prose prose-sm max-w-none dark:prose-invert [&_.bn-editor]:text-sm [&_.bn-editor]:leading-relaxed [&_img]:max-w-[200px] [&_img]:h-auto [&_img]:rounded-md [&_img]:border [&_img]:border-gray-200 [&_img]:dark:border-gray-600 [&_img]:shadow-sm [&_p]:mb-2 [&_p:last-child]:mb-0">
+                <BlockNoteView editor={editor} editable={false} />
+            </div>
+        </div>
+    );
+}
 
 export default function ChatWithJournal(){
     const [messages, setMessages] = useState<Message[]>([]);
@@ -37,8 +69,11 @@ export default function ChatWithJournal(){
 
             const data = await res.json();
 
-
-            const aiMessage: Message = { role: "assistant", content: data.answer };
+            const aiMessage: Message = { 
+                role: "assistant", 
+                content: data.answer,
+                relatedEntries: data.relatedEntries || []
+            };
             setMessages(prevMsg => [...prevMsg, aiMessage]);
         } catch (err) {
             console.log(err);
@@ -77,6 +112,20 @@ export default function ChatWithJournal(){
                                 }`}
                             >
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+                                
+                                {/* Show related journal entries for assistant messages */}
+                                {message.role === "assistant" && message.relatedEntries && message.relatedEntries.length > 0 && (
+                                    <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 font-medium flex items-center gap-1">
+                                            📖 Related entries ({message.relatedEntries.length})
+                                        </p>
+                                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                                            {message.relatedEntries.map((entry) => (
+                                                <ChatJournalEntry key={entry.id} entry={entry} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
