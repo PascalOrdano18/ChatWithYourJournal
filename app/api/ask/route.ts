@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerSupabaseClient } from "@/lib/supabase";
 import { generateText } from "ai"
 import { google } from "@ai-sdk/google"
 
@@ -8,7 +8,7 @@ import { google } from "@ai-sdk/google"
 type BlockNoteContent = {
     type: string;
     content?: {text: string}[];
-    childer?: any[];
+    children?: unknown[];
 }
 
 const blockNoteToPlainText = (blocks:BlockNoteContent[]): string => {
@@ -29,25 +29,40 @@ export async function POST(req: Request){
         return NextResponse.json({ answer: "Missing Gemini API key." }, { status: 500 });
     }
 
+    // Create server-side Supabase client with user session
+    const supabase = await createServerSupabaseClient();
+    
+    // Get the authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+        return NextResponse.json({ 
+            answer: "You must be logged in to chat with your journal." 
+        }, { status: 401 });
+    }
+
+    // Query journal entries for the authenticated user
     const { data: entries, error } = await supabase
     .from('journal_entries')
     .select('entry_date, content')
+    .eq('user_id', user.id)  // Filter by authenticated user's ID
     .order('entry_date', { ascending: false })
     .limit(30);
 
     console.log("📘 Raw journal entries:", entries);
+    console.log("🔐 Authenticated user ID:", user.id);
 
 
     if(error || !entries){
         return NextResponse.json({ answer: "Hubo un problema sorry" });
     }
 
-    // ENTRIES ES NULL, TENGO QUE PASAR EL USER ID PORQUE TENGO EL RLS QUE LO PIDE
+    // ✅ Now properly authenticated with user context for RLS
     const context = entries
     .map(e => {
-        console.log("🧱 ENTRY content from Supabase:", e.content); // <-- Add here
+        console.log("🧱 ENTRY content from Supabase:", e.content); 
 
-      const text = blockNoteToPlainText(e.content); // use directly
+      const text = blockNoteToPlainText(e.content);
       return `- ${e.entry_date}: ${text}`;
     })
     .filter(Boolean)

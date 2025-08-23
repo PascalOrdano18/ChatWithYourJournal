@@ -15,6 +15,7 @@
     "@blocknote/shadcn": "^0.35.0",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-slot": "^1.2.3",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.52.1",
     "ai": "^5.0.0",
     "class-variance-authority": "^0.7.1",
