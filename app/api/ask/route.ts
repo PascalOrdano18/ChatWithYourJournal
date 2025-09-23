@@ -45,7 +45,7 @@ type JournalEntry = {
 
 
 export async function POST(req: Request){
-    const { question } = await req.json();
+    const { question, attachments } = await req.json();
     
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
         return NextResponse.json({ answer: "Missing Gemini API key." }, { status: 500 });
@@ -96,6 +96,20 @@ export async function POST(req: Request){
         .map(e => `- ${e.entry_date}: ${e.text}`)
         .filter(Boolean)
         .join("\n");
+
+    // Build prompt with attachments if provided
+    let attachmentContext = "";
+    if (attachments && attachments.length > 0) {
+        attachmentContext = `
+        
+        ### User has shared ${attachments.length} media file(s):
+        ${attachments.map((att: any, index: number) => 
+            `- File ${index + 1}: ${att.type.startsWith('image/') ? 'Image' : 'Video'} - ${att.url}`
+        ).join('\n')}
+        
+        Please consider these media files in your response. If they are images, describe what you see and how they might relate to the journal entries. If they are videos, acknowledge them and ask if the user wants to discuss the content.
+        `;
+    }
   
 
     const prompt = `
@@ -108,10 +122,12 @@ export async function POST(req: Request){
         - If the context is insufficient, say so and offer what could be asked or clarified.
         - Avoid hallucinating: do not invent details that are not in the journal.
         - If the user asks for advice, base it only on the context provided.
+        - If the user shares media files, acknowledge them and provide relevant insights based on the journal context.
 
         ### Data:
         Journal Context:
         ${context}
+        ${attachmentContext}
 
         User Question:
         ${question}

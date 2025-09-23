@@ -1,0 +1,92 @@
+/* Custom styles for BlockNote image rendering */
+.journal-editor-wrapper {
+  min-height: 300px;
+}
+
+.journal-editor-wrapper .bn-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 8px 0;
+  display: block !important;
+}
+
+.journal-editor-wrapper .bn-editor .bn-block[data-content-type="image"] {
+  display: block !important;
+  margin: 16px 0;
+}
+
+.journal-editor-wrapper .bn-editor .bn-block[data-content-type="image"] img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode styles */
+.dark .journal-editor-wrapper .bn-editor img {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Ensure image blocks are properly displayed */
+.journal-editor-wrapper .bn-editor [data-content-type="image"] {
+  display: block !important;
+}
+
+.journal-editor-wrapper .bn-editor [data-content-type="image"] img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Force image display */
+.journal-editor-wrapper img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Specific BlockNote image block styles */
+.journal-editor-wrapper .bn-block[data-content-type="image"] {
+  display: block !important;
+  margin: 16px 0 !important;
+}
+
+.journal-editor-wrapper .bn-block[data-content-type="image"] img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Force all images to display */
+.journal-editor-wrapper *[data-content-type="image"] {
+  display: block !important;
+}
+
+.journal-editor-wrapper *[data-content-type="image"] img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Custom image renderer styles */
+.image-renderer {
+  margin-top: 16px;
+}
+
+.image-renderer img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 8px 0;
+}
+
+.dark .image-renderer img {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
