@@ -7,9 +7,10 @@ interface FileUploadProps {
   onFileUpload: (url: string, type: string) => void;
   disabled?: boolean;
   className?: string;
+  variant?: "default" | "icon";
 }
 
-export default function FileUpload({ onFileUpload, disabled = false, className = "" }: FileUploadProps) {
+export default function FileUpload({ onFileUpload, disabled = false, className = "", variant = "default" }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,7 +37,6 @@ export default function FileUpload({ onFileUpload, disabled = false, className =
 
       onFileUpload(data.url, data.type);
     } catch (error) {
-      console.error('Upload error:', error);
       alert(error instanceof Error ? error.message : 'Upload failed');
     } finally {
       setIsUploading(false);
@@ -78,6 +78,33 @@ export default function FileUpload({ onFileUpload, disabled = false, className =
     if (type.startsWith('video/')) return <Video className="w-4 h-4" />;
     return <File className="w-4 h-4" />;
   };
+
+  if (variant === "icon") {
+    return (
+      <div className={`relative ${className}`}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*,.heic,.heif"
+          onChange={handleFileChange}
+          className="hidden"
+          disabled={disabled || isUploading}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || isUploading}
+          className={`w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm`}
+          title={isUploading ? "Uploading..." : "Upload file"}
+        >
+          {isUploading ? (
+            <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`}>

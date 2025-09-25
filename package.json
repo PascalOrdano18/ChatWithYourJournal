@@ -9,11 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.0",
+    "@ai-sdk/openai": "^2.0.35",
     "@blocknote/core": "^0.35.0",
     "@blocknote/react": "^0.35.0",
     "@blocknote/shadcn": "^0.35.0",
-    "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.52.1",
@@ -21,6 +20,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "heic2any": "^0.0.4",
     "lucide-react": "^0.525.0",
     "next": "15.4.3",
     "openai": "^5.11.0",
@@ -28,6 +28,7 @@
     "react-day-picker": "^9.8.1",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.61.1",
+    "sharp": "^0.33.5",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
     "zod": "^4.0.10"

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
+import sharp from "sharp";
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,16 +50,40 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Generate unique filename
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    // Generate unique filename (we may change extension if converting)
+    const originalExt = file.name.split('.').pop()?.toLowerCase();
+    let targetExt = originalExt || 'bin';
+    let targetMime = file.type;
+
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || /\.(heic|heif)$/i.test(file.name);
+    if (isHeic) {
+      targetExt = 'jpg';
+      targetMime = 'image/jpeg';
+    }
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${targetExt}`;
+
+    // Prepare data for upload (convert HEIC/HEIF to JPEG server-side)
+    let uploadBuffer: Buffer | File = file;
+    try {
+      if (isHeic) {
+        const arrayBuffer = await file.arrayBuffer();
+        const input = Buffer.from(arrayBuffer);
+        const converted = await sharp(input).toFormat('jpeg', { quality: 82 }).toBuffer();
+        uploadBuffer = converted;
+      }
+    } catch (convErr) {
+      console.warn('HEIC server conversion failed, uploading original file:', convErr);
+      // Keep uploadBuffer as original file
+      targetMime = file.type; // keep
+    }
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from('journal-media')
-      .upload(fileName, file, {
+      .upload(fileName, uploadBuffer, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: targetMime
       });
 
     if (error) {
@@ -74,16 +99,25 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    // Prefer a signed URL (works for private buckets). Fallback to public URL if signing fails.
+    let signedUrl: string | null = null;
+    const signed = await supabase.storage
       .from('journal-media')
-      .getPublicUrl(fileName);
+      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
+    if (!signed.error && signed.data?.signedUrl) {
+      signedUrl = signed.data.signedUrl;
+    } else {
+      const { data: pub } = supabase.storage
+        .from('journal-media')
+        .getPublicUrl(fileName);
+      signedUrl = pub.publicUrl;
+    }
 
     return NextResponse.json({
-      url: publicUrl,
+      url: signedUrl,
       fileName: data.path,
-      type: file.type,
-      size: file.size
+      type: targetMime,
+      size: isHeic && uploadBuffer instanceof Buffer ? uploadBuffer.byteLength : file.size
     });
 
   } catch (error) {

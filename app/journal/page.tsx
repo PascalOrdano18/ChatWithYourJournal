@@ -7,9 +7,10 @@ import { format, isToday } from "date-fns";
 
 import { supabase }  from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
-import { useTheme } from "@/hooks/useTheme";
 import { Calendar } from "@/components/ui/calendar";
 import Navbar from "@/app/components/Navbar";
+import ChatWithJournal from "@/components/chat/ChatWithJournal";
+import { MessageCircle } from "lucide-react";
 
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
@@ -19,8 +20,8 @@ const JournalEditor = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="animate-pulse bg-gray-200 dark:bg-gray-600 rounded-lg h-[300px] flex items-center justify-center">
-        <span className="text-gray-500 dark:text-gray-400">Loading editor...</span>
+      <div className="animate-pulse bg-cal-poly-green-200 dark:bg-cal-poly-green-600 rounded-lg h-[300px] flex items-center justify-center">
+        <span className="text-cal-poly-green-500 dark:text-cal-poly-green-400">Loading editor...</span>
       </div>
     )
   }
@@ -42,7 +43,6 @@ export default function Journal() {
 
   const JOURNAL_ENTRIES_TABLE = 'journal_entries';
   const { user, loading } = useUser();
-  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
 
@@ -83,6 +83,7 @@ export default function Journal() {
   async function handleSave(){
     if(!selectedDate) return ;
 
+    // Use local date directly to avoid timezone issues
     const dateKey = format(selectedDate, "yyyy-MM-dd");
 
     const { error } = await supabase.from(JOURNAL_ENTRIES_TABLE).upsert(
@@ -102,7 +103,10 @@ export default function Journal() {
   }
 
   const todaysEntry = entries.find(
-    (e) => e.entry_date === format(selectedDate ?? new Date(), "yyyy-MM-dd")
+    (e) => {
+      if (!selectedDate) return false;
+      return e.entry_date === format(selectedDate, "yyyy-MM-dd");
+    }
   );
 
 
@@ -129,88 +133,86 @@ export default function Journal() {
     return localDate;
   });
 
-  console.log("entryDates:", entryDates.map(d => d.toString()));
+  // removed noisy logging of entryDates
 
 
 
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors relative">
       <Navbar 
         onSignOut={handleSignOut}
-        onToggleTheme={toggleTheme}
-        theme={theme}
       />
 
-      <div className="flex gap-8 p-4 md:p-8">
-        {/* Sidebar */}
-        <aside className="w-80 flex-shrink-0">
-          <div className="sticky top-8 space-y-6">
-            {/* Calendar Card */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-              <div className="border-b border-gray-100 dark:border-gray-700 p-4">
-                <h2 className="text-lg font-serif font-semibold text-gray-900 dark:text-white">
-                  Select a Day
-                </h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-serif mt-1">
-                  Choose a date to view or create entries
-                </p>
-              </div>
-              <div className="p-3">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="border-0 bg-transparent shadow-none"
-                  modifiers={{
-                    hasEntry: (date) =>
-                      entryDates.some(entry =>
-                        entry.getFullYear() === date.getFullYear() &&
-                        entry.getMonth() === date.getMonth() &&
-                        entry.getDate() === date.getDate()
-                      )
-                  }}
-                  modifiersClassNames={{
-                    hasEntry:
-                    "relative after:content-[''] after:w-1.5 after:h-1.5 after:bg-emerald-500 after:rounded-full after:absolute after:bottom-[4px] after:left-1/2 after:-translate-x-1/2"
-
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Entry Stats */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-              <h3 className="text-sm font-serif font-semibold text-gray-900 dark:text-white mb-2">
-                Journal Stats
-              </h3>
-              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <div className="flex justify-between">
-                  <span>Total Entries</span>
-                  <span className="font-medium">{entries.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Current Entry</span>
-                  <span className="font-medium">
-                    {selectedDate ? format(selectedDate, "MMM do") : "None"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 min-w-0 space-y-8">
-          {/* Editor Section */}
-          <section className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-            <div className="border-b border-gray-100 dark:border-gray-700 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-white">
-                    {todaysEntry ? "Edit Entry" : "New Entry"}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-12 gap-12">
+          {/* Sidebar */}
+          <aside className="col-span-3 -ml-4 sm:-ml-6 md:-ml-8 pr-4 md:pr-6 lg:pr-10">
+            <div className="sticky top-8 space-y-8">
+              {/* Calendar */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-[hsl(var(--primary))] rounded-full"></div>
+                  <h2 className="text-sm font-semibold text-[hsl(var(--primary))] tracking-wide uppercase">
+                    Calendar
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 font-serif italic mt-1">
+                </div>
+                <div className="bg-white/70 dark:bg-gray-950/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/60 dark:border-gray-800/60">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="border-0 bg-transparent shadow-none"
+                    modifiers={{
+                      hasEntry: (date) =>
+                        entryDates.some(entry =>
+                          entry.getFullYear() === date.getFullYear() &&
+                          entry.getMonth() === date.getMonth() &&
+                          entry.getDate() === date.getDate()
+                        )
+                    }}
+                    modifiersClassNames={{
+                      hasEntry: ""
+                    }}
+                    entries={entryDates}
+                  />
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-[hsl(var(--primary))] rounded-full"></div>
+                  <h2 className="text-sm font-semibold text-[hsl(var(--primary))] tracking-wide uppercase">
+                    Overview
+                  </h2>
+                </div>
+              <div className="space-y-3 bg-white/70 dark:bg-gray-950/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/60 dark:border-gray-800/60">
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Total entries</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{entries.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Selected</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {selectedDate ? format(selectedDate, "MMM d") : "None"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="col-span-9 space-y-12">
+            {/* Editor Section */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h1 className="text-2xl font-bold text-[hsl(var(--primary))]">
+                    {todaysEntry ? "Edit Entry" : "New Entry"}
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {selectedDate
                       ? `Writing for ${format(selectedDate, "MMMM do, yyyy")}`
                       : "Write about your day"}
@@ -219,100 +221,111 @@ export default function Journal() {
                 <button
                   onClick={handleSave}
                   disabled={!selectedDate || !isTodayCheck(selectedDate)}
-                  className="rounded-lg bg-gray-900 dark:bg-white px-4 py-2 font-serif font-medium text-white dark:text-gray-900 shadow-sm transition-all duration-200 hover:bg-gray-800 dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-[hsl(var(--primary))] hover:brightness-110 disabled:bg-gray-200 dark:disabled:bg-gray-800 text-[hsl(var(--primary-foreground))] disabled:text-gray-400 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:ring-offset-2 disabled:cursor-not-allowed shadow-sm"
                 >
                   Save Entry
                 </button>
               </div>
-            </div>
 
-            {/* Rich-text editor */}
-            <div className="p-6">
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-100 dark:border-gray-600 min-h-[300px]">
+              {/* Rich-text editor */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm min-h-[500px] overflow-hidden">
                 <JournalEditor
                   key={selectedDate?.toISOString()}        /* remount on day change */
                   initialContent={todaysEntry?.content}
                   onChange={setDraft}
                 />
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* Recent Entries Feed */}
-          <section className="space-y-6">
-            <div className="flex items-center justify-between sticky top-0 bg-gray-50 dark:bg-gray-900 py-4 z-10">
-              <h2 className="text-xl font-serif font-semibold text-gray-900 dark:text-white">
-                Recent Entries
-              </h2>
-              <span className="text-sm text-gray-500 dark:text-gray-400 font-serif">
-                {entries.length} entries
-              </span>
-            </div>
+            {/* Recent Entries Feed */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-[hsl(var(--primary))] rounded-full"></div>
+                  <h2 className="text-xl font-bold text-[hsl(var(--primary))]">
+                    Recent Entries
+                  </h2>
+                </div>
+                <div className="px-3 py-1 bg-[hsl(var(--primary)/0.08)] rounded-full border border-[hsl(var(--primary)/0.2)]">
+                  <span className="text-xs font-medium text-[hsl(var(--primary))]">
+                    {entries.length} entries
+                  </span>
+                </div>
+              </div>
 
-            {entries.length === 0 ? (
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-12 text-center shadow-sm">
-                <div className="mx-auto max-w-sm">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              {entries.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-serif font-medium text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
                     Start Your Journey
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 font-serif">
+                  <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                     Begin writing your first journal entry to capture your thoughts and memories.
                   </p>
                 </div>
-              </div>
-            ) : (
-              <div className="feed-container space-y-4 pb-8 max-h-[800px] overflow-y-auto">
-                {entries.map((entry, index) => (
-                  <article
-                    key={entry.id}
-                    className="feed-post bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600"
-                  >
-                    {/* Entry header */}
-                    <div className="flex items-start justify-between p-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300 font-serif">
+              ) : (
+                <div className="grid gap-6 max-h-[600px] overflow-y-auto">
+                  {entries.map((entry, index) => (
+                    <article key={entry.id} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 hover:shadow-lg overflow-hidden">
+                      <div className="p-6">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-10 h-10 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 rounded-xl flex items-center justify-center font-bold text-sm">
                             {index + 1}
-                          </span>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                              {format(new Date(entry.entry_date + 'T00:00:00'), "MMMM do, yyyy")}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {format(new Date(entry.created_at), "MMM do 'at' h:mm a")}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-serif font-medium text-gray-900 dark:text-white">
-                            {format(new Date(entry.entry_date), "MMMM do, yyyy")}
-                          </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 font-serif">
-                            {format(new Date(entry.created_at), "MMM do 'at' h:mm a")}
-                          </p>
+                        <div className="prose prose-sm max-w-none text-gray-700 dark:text-gray-300">
+                          <ReadOnlyNote content={entry.content} />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Entry content */}
-                    <div className="p-6">
-                      <div className="prose prose-journal max-w-none font-serif">
-                        <ReadOnlyNote content={entry.content} />
-                      </div>
-                    </div>
-                  </article>
-                ))}
-
-                {/* End of entries indicator */}
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center gap-3 text-gray-400 dark:text-gray-600 text-sm font-serif">
-                    <div className="w-12 h-px bg-gray-300 dark:bg-gray-600"></div>
-                    <span>End of entries</span>
-                    <div className="w-12 h-px bg-gray-300 dark:bg-gray-600"></div>
-                  </div>
+                    </article>
+                  ))}
                 </div>
-              </div>
-            )}
-          </section>
-        </main>
+              )}
+            </section>
+          </main>
+        </div>
       </div>
+
+      {/* Floating Chat Toggle */}
+      <FloatingChat />
     </main>
+  );
+}
+
+function FloatingChat(){
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-0">
+      <div
+        className={`${open ? 'w-[460px] h-[660px] rounded-2xl' : 'w-14 h-14 rounded-full'} ${open ? 'bg-white dark:bg-gray-900' : 'bg-white/70 dark:bg-gray-900/60'} backdrop-blur-md border ${open ? 'border-2 border-[hsl(var(--primary))]' : 'border-white/40 dark:border-white/10'} ${open ? 'shadow-2xl ring-2 ring-[hsl(var(--primary)/0.2)]' : 'shadow-2xl ring-1 ring-black/5'} transition-all duration-300 ease-out overflow-hidden flex items-end justify-end`}
+      >
+        {/* Inner content morphs in */}
+        {open ? (
+          <div className="w-full h-full flex flex-col">
+            <ChatWithJournal compact frameless className="w-full h-full" onClose={() => setOpen(false)} title="Chat" />
+          </div>
+        ) : (
+          <button
+            onClick={() => setOpen(true)}
+            className="w-14 h-14 rounded-full bg-[hsl(var(--primary))] hover:brightness-110 text-[hsl(var(--primary-foreground))] shadow-xl flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:ring-offset-2"
+            aria-label="Open chat"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

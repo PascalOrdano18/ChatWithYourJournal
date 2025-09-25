@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 interface ImageRendererProps {
   content: any[];
   className?: string;
+  onUpdateBlock?: (blockId: string, nextProps: Record<string, any>) => void;
 }
 
-export default function ImageRenderer({ content, className = "" }: ImageRendererProps) {
+export default function ImageRenderer({ content, className = "", onUpdateBlock }: ImageRendererProps) {
   const [processedContent, setProcessedContent] = useState<any[]>([]);
 
   useEffect(() => {
@@ -18,7 +19,11 @@ export default function ImageRenderer({ content, className = "" }: ImageRenderer
         return {
           ...block,
           id: block.id || `image-${index}`,
-          rendered: true
+          rendered: true,
+          props: {
+            ...block.props,
+            width: typeof block.props.width === 'number' ? block.props.width : 60
+          }
         };
       }
       return block;
@@ -39,13 +44,11 @@ export default function ImageRenderer({ content, className = "" }: ImageRenderer
                 src={block.props.url}
                 alt={block.props.alt || block.props.name || 'Uploaded image'}
                 className="max-w-full h-auto rounded-lg shadow-md border border-gray-200 dark:border-gray-600"
+                style={{ width: `${Math.min(Math.max(block.props.width ?? 100, 10), 100)}%` }}
                 onError={(e) => {
-                  console.error('Image failed to load:', block.props.url);
                   e.currentTarget.style.display = 'none';
                 }}
-                onLoad={() => {
-                  console.log('Image loaded successfully:', block.props.url);
-                }}
+                onLoad={() => {}}
               />
             </div>
           );

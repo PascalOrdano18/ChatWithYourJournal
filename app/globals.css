@@ -54,55 +54,63 @@ body {
 
 :root {
   --radius: 0.625rem;
-  --background: 255 255 255;
-  --foreground: 37 37 37;
-  --card: 255 255 255;
-  --card-foreground: 37 37 37;
-  --popover: 255 255 255;
-  --popover-foreground: 37 37 37;
-  --primary: 37 37 37;
-  --primary-foreground: 251 251 251;
-  --secondary: 247 247 247;
-  --secondary-foreground: 37 37 37;
-  --muted: 247 247 247;
-  --muted-foreground: 142 142 142;
-  --accent: 247 247 247;
-  --accent-foreground: 37 37 37;
-  --destructive: 239 68 68;
-  --border: 229 229 229;
-  --input: 229 229 229;
-  --ring: 37 37 37;
-  --chart-1: 220 38 127;
-  --chart-2: 34 197 94;
-  --chart-3: 59 130 246;
-  --chart-4: 249 115 22;
-  --chart-5: 168 85 247;
+  /* Paleta reducida */
+  --white: 255 255 255; /* blanco total */
+  --black: 0 0 0; /* negro total */
+  --black-soft: 24 24 24; /* negro más claro */
+  /* Vibrant primary green (H S L) used for primary/accent */
+  --green: 142 62% 42%;
+
+  /* Asignaciones del tema (modo claro por defecto) */
+  --background: var(--white);
+  --foreground: var(--black);
+  --card: var(--white);
+  --card-foreground: var(--black);
+  --popover: var(--white);
+  --popover-foreground: var(--black);
+  --primary: var(--green);
+  --primary-foreground: var(--white);
+  --secondary: var(--black-soft);
+  --secondary-foreground: var(--white);
+  --muted: var(--black-soft);
+  --muted-foreground: var(--white);
+  --accent: var(--green);
+  --accent-foreground: var(--white);
+  --destructive: 220 38 38;
+  --border: var(--black-soft);
+  --input: var(--black-soft);
+  --ring: var(--green);
+  --chart-1: var(--green);
+  --chart-2: var(--black);
+  --chart-3: var(--black-soft);
+  --chart-4: var(--white);
+  --chart-5: var(--green);
 }
 
 .dark {
-  --background: 15 15 15;
-  --foreground: 245 245 245;
-  --card: 25 25 25;
-  --card-foreground: 245 245 245;
-  --popover: 25 25 25;
-  --popover-foreground: 245 245 245;
-  --primary: 245 245 245;
-  --primary-foreground: 15 15 15;
-  --secondary: 45 45 45;
-  --secondary-foreground: 245 245 245;
-  --muted: 45 45 45;
-  --muted-foreground: 156 163 175;
-  --accent: 45 45 45;
-  --accent-foreground: 245 245 245;
-  --destructive: 239 68 68;
-  --border: 45 45 45;
-  --input: 45 45 45;
-  --ring: 156 163 175;
-  --chart-1: 220 38 127;
-  --chart-2: 34 197 94;
-  --chart-3: 59 130 246;
-  --chart-4: 249 115 22;
-  --chart-5: 168 85 247;
+  --background: var(--black);
+  --foreground: var(--white);
+  --card: var(--black-soft);
+  --card-foreground: var(--white);
+  --popover: var(--black-soft);
+  --popover-foreground: var(--white);
+  --primary: var(--green);
+  --primary-foreground: var(--white);
+  --secondary: var(--black-soft);
+  --secondary-foreground: var(--white);
+  --muted: var(--black-soft);
+  --muted-foreground: var(--white);
+  --accent: var(--green);
+  --accent-foreground: var(--white);
+  --destructive: 220 38 38;
+  --border: var(--black-soft);
+  --input: var(--black-soft);
+  --ring: var(--green);
+  --chart-1: var(--green);
+  --chart-2: var(--black);
+  --chart-3: var(--black-soft);
+  --chart-4: var(--white);
+  --chart-5: var(--green);
 }
 
 * {
@@ -110,12 +118,14 @@ body {
 }
 
 html {
-  @apply bg-gray-50 dark:bg-gray-900;
+  background-color: hsl(var(--background));
 }
 
 body {
-  @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Add serif font classes */

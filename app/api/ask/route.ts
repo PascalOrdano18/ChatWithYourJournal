@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { generateText } from "ai"
-import { google } from "@ai-sdk/google"
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
 
 
 
@@ -43,12 +43,89 @@ type JournalEntry = {
     created_at: string;
 }
 
+// Intent detection for better responses
+type Intent = "media_request" | "entry_lookup" | "general";
+
+function detectIntent(question: string): Intent {
+    const s = question.toLowerCase();
+    const mediaWords = /(foto|fotos|imagen|imágenes|imagenes|media|picture|pictures|photos|muestra|muéstrame|envia|envía)/.test(s);
+    const asksWhatHappened = /qué\s+(hice|pasó|ocurrió)/.test(s) || /que\s+(hice|paso|ocurrio)/.test(s);
+    
+    if (mediaWords) return "media_request";
+    if (asksWhatHappened) return "entry_lookup";
+    return "general";
+}
+
+// Extract and parse dates from user questions
+function extractDateFromQuestion(question: string): string | null {
+    const s = question.toLowerCase();
+    
+    // Look for patterns like "22 de agosto", "22 agosto", "agosto 22", etc.
+    const datePatterns = [
+        // "22 de agosto de 2025" or "22 de agosto"
+        /(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+de\s+(\d{4}))?/,
+        // "22 agosto 2025" or "22 agosto"
+        /(\d{1,2})\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(\d{4}))?/,
+        // "agosto 22, 2025" or "agosto 22"
+        /(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(\d{1,2})(?:,\s+(\d{4}))?/
+    ];
+    
+    const monthNames = {
+        'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
+        'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
+        'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
+    };
+    
+    for (const pattern of datePatterns) {
+        const match = s.match(pattern);
+        if (match) {
+            let day, month, year;
+            
+            if (pattern === datePatterns[0] || pattern === datePatterns[1]) {
+                // "22 de agosto" or "22 agosto"
+                day = match[1];
+                month = monthNames[match[2] as keyof typeof monthNames];
+                year = match[3] || new Date().getFullYear().toString();
+            } else {
+                // "agosto 22"
+                month = monthNames[match[1] as keyof typeof monthNames];
+                day = match[2];
+                year = match[3] || new Date().getFullYear().toString();
+            }
+            
+            return `${year}-${month}-${day.padStart(2, '0')}`;
+        }
+    }
+    
+    return null;
+}
+
+// Extract image URLs from BlockNote content
+function extractImageUrls(content: any): string[] {
+    if (!Array.isArray(content)) return [];
+    const urls: string[] = [];
+    
+    const walk = (blocks: any[]) => {
+        for (const block of blocks) {
+            if (block?.type === 'image' && block?.props?.url) {
+                urls.push(block.props.url);
+            }
+            if (Array.isArray(block?.children) && block.children.length) {
+                walk(block.children);
+            }
+        }
+    };
+    
+    walk(content);
+    return urls;
+}
+
 
 export async function POST(req: Request){
-    const { question, attachments } = await req.json();
+    const { question, attachments, history = [] } = await req.json();
     
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-        return NextResponse.json({ answer: "Missing Gemini API key." }, { status: 500 });
+    if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json({ answer: "Missing OpenAI API key." }, { status: 500 });
     }
 
     // Create server-side Supabase client with user session
@@ -69,32 +146,89 @@ export async function POST(req: Request){
     .select('id, entry_date, content, created_at')
     .eq('user_id', user.id)  // Filter by authenticated user's ID
     .order('entry_date', { ascending: false })
-    .limit(30);
+    .limit(300);
 
     if(error || !entries){
         return NextResponse.json({ answer: "Hubo un problema sorry" });
     }
 
+    // Detect intent and handle media requests specially
+    const intent = detectIntent(question);
+    
+    // Extract date from question if present
+    const questionDate = extractDateFromQuestion(question);
+    
     // Calculate relevance scores and find most relevant entries
     const entriesWithRelevance = entries.map(entry => {
         const text = blockNoteToPlainText(entry.content);
-        const relevance = calculateRelevance(text, question);
+        let relevance = calculateRelevance(text, question);
+        
+        // Boost relevance if the entry date matches the question date
+        if (questionDate && entry.entry_date === questionDate) {
+            relevance = Math.max(relevance, 0.8); // High relevance for exact date match
+        }
+        
+        const imageUrls = extractImageUrls(entry.content);
         return {
             ...entry,
             text,
-            relevance
+            relevance,
+            imageUrls
         };
     });
 
-    // Sort by relevance and get top 5 most relevant entries
+    // Sort by relevance and get top 10 most relevant entries
     const relevantEntries = entriesWithRelevance
         .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, 5);
+        .slice(0, 10);
 
-    // Create context for AI (still using all entries for broader context)
-    const context = entriesWithRelevance
+    // Handle media requests - return direct image URLs prioritizing date/keywords
+    if (intent === "media_request") {
+        const stopwords = new Set([
+            'de','del','la','el','los','las','en','y','o','a','un','una','unos','unas','que','mi','mis','mio','mía','mias','míos','sobre','para','por','con','al','lo'
+        ]);
+        const loweredQuestion = question.toLowerCase();
+        const keywords = loweredQuestion
+            .split(/[^a-záéíóúñü0-9]+/i)
+            .filter((w: string) => w.length > 2 && !stopwords.has(w));
+
+        // candidates with images
+        let candidates = entriesWithRelevance.filter(e => e.imageUrls.length > 0);
+
+        // if user asked a specific date, filter by exact date first
+        if (questionDate) {
+            const dateMatches = candidates.filter(e => e.entry_date === questionDate);
+            if (dateMatches.length > 0) {
+                candidates = dateMatches;
+            }
+        }
+
+        // Boost candidates that include any keyword from the question
+        candidates = candidates
+            .map(e => {
+                const text = e.text.toLowerCase();
+                const keywordHits = keywords.reduce((acc: number, k: string) => acc + (text.includes(k) ? 1 : 0), 0);
+                return { ...e, mediaScore: e.relevance + keywordHits * 0.3 };
+            })
+            .sort((a, b) => b.mediaScore - a.mediaScore);
+
+        const chosen = candidates[0];
+        if (chosen) {
+            const imageList = chosen.imageUrls.map(url => `![Imagen](${url})`).join('\n');
+            return NextResponse.json({
+                answer: `Aquí están las imágenes de ${chosen.entry_date}:\n\n${imageList}`
+            });
+        }
+
+        return NextResponse.json({
+            answer: "No encontré imágenes en tus entradas relevantes para esta consulta."
+        });
+    }
+
+    // Create context for AI (use only top relevant entries for better focus)
+    const context = relevantEntries
+        .filter(e => e.relevance > 0.1)
         .map(e => `- ${e.entry_date}: ${e.text}`)
-        .filter(Boolean)
         .join("\n");
 
     // Build prompt with attachments if provided
@@ -111,6 +245,12 @@ export async function POST(req: Request){
         `;
     }
   
+
+    const chatHistory = Array.isArray(history) && history.length > 0
+        ? history
+            .map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${typeof m.content === 'string' ? m.content : ''}`)
+            .join('\n')
+        : '';
 
     const prompt = `
         You are an empathetic and insightful journal companion. 
@@ -129,6 +269,8 @@ export async function POST(req: Request){
         ${context}
         ${attachmentContext}
 
+        ${chatHistory ? `### Conversation so far (recent turns):\n${chatHistory}` : ''}
+
         User Question:
         ${question}
 
@@ -138,38 +280,10 @@ export async function POST(req: Request){
 
         Answer:
         `;
-
-
-    // SI USASE OPENAI
-    // const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    // const completion = await openai.chat.completions.create({
-    //     model: "gpt-3.5-turbo",
-    // messages: [
-    //   { role: "system", content: "You are a helpful journal assistant." },
-    //   { role: "user", content: prompt },
-    // ],
-    // })
-    // const answer = completion.choices[0].message.content;
-
-
-   const { text } = await generateText({
-    model: google("models/gemini-2.0-flash-exp"),
-    prompt: prompt
-   })
-
-    // Filter relevant entries to only include those with some relevance (> 0)
-    const entriesToReturn = relevantEntries
-        .filter(entry => entry.relevance > 0)
-        .slice(0, 3) // Limit to top 3 most relevant
-        .map(entry => ({
-            id: entry.id,
-            entry_date: entry.entry_date,
-            content: entry.content,
-            created_at: entry.created_at
-        }));
-
-    return NextResponse.json({
-        answer: text,
-        relatedEntries: entriesToReturn
+    const { text } = await generateText({
+        model: openai("gpt-4o-mini"),
+        prompt
     });
+
+    return NextResponse.json({ answer: text });
 }

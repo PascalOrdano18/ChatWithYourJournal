@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
-import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/app/components/Navbar";
 import ChatWithJournal from "@/components/chat/ChatWithJournal";
@@ -10,7 +9,6 @@ import { useEffect } from "react";
 
 export default function JournalChatPage() {
   const { user, loading } = useUser();
-  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,8 +36,6 @@ export default function JournalChatPage() {
         title="Chat with Journal"
         subtitle="🔍 Chat with your Journal"
         onSignOut={handleSignOut}
-        onToggleTheme={toggleTheme}
-        theme={theme}
       />
       <div className="container mx-auto max-w-5xl px-4 py-6">
         <ChatWithJournal />
