@@ -5,13 +5,25 @@ import "@blocknote/shadcn/style.css";
 import "./JournalEditor.css";
 
 import { useCreateBlockNote, useEditorChange } from "@blocknote/react";
-import { useState } from "react";
 import { BlockNoteView } from "@blocknote/shadcn";
 // Removed custom ImageRenderer to avoid duplicate rendering of images
 
+type BlockNoteContent = {
+    type: string;
+    content?: {text: string}[];
+    children?: BlockNoteContent[];
+    props?: {
+        url?: string;
+        alt?: string;
+        name?: string;
+        mime?: string;
+        type?: string;
+    };
+}
+
 type Props = {
-  initialContent?: any;
-  onChange?:       (json: any) => void;
+  initialContent?: BlockNoteContent[];
+  onChange?:       (json: BlockNoteContent[]) => void;
   readOnly?: boolean;
 };
 
@@ -20,9 +32,7 @@ export default function JournalEditor({
   onChange,
   readOnly = false,
 }: Props) {
-  const [liveContent, setLiveContent] = useState<any[]>(
-    Array.isArray(initialContent) && initialContent.length > 0 ? initialContent : []
-  );
+  // Removed unused liveContent variable
 
   const validContent =
     Array.isArray(initialContent) && initialContent.length > 0
@@ -30,19 +40,20 @@ export default function JournalEditor({
       : undefined;
 
   const editor = useCreateBlockNote({ 
-    initialContent: validContent,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    initialContent: validContent as any,
     uploadFile: async (file: File) => {
       
       // Convert HEIC/HEIF to JPEG in-browser before upload
       let fileToUpload: File = file;
       try {
         if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-          const heic2any = (await import('heic2any')).default as any;
+          const heic2any = (await import('heic2any')).default as (options: { blob: File; toType: string; quality: number }) => Promise<BlobPart>;
           const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
           fileToUpload = new File([blob as BlobPart], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
         }
-      } catch (convErr) {
-        void convErr;
+      } catch (convErr: unknown) {
+        console.warn('HEIC conversion failed:', convErr);
       }
 
       // Custom file upload handler for BlockNote
@@ -78,7 +89,7 @@ export default function JournalEditor({
     );
   }
 
-  function normalizeBlocksToImages(blocks: any[]): any[] {
+  function normalizeBlocksToImages(blocks: BlockNoteContent[]): BlockNoteContent[] {
     return blocks.map((block) => {
       if (block?.type === 'file') {
         const mime: string | undefined = block?.props?.mime || block?.props?.type;
@@ -105,8 +116,7 @@ export default function JournalEditor({
   }
 
   useEditorChange((ed) => {
-    const normalized = normalizeBlocksToImages(ed.document);
-    setLiveContent(normalized);
+    const normalized = normalizeBlocksToImages(ed.document as unknown as BlockNoteContent[]);
     onChange?.(normalized);
   }, editor);
 

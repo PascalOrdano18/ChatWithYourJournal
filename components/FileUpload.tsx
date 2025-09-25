@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Image, Video, File } from "lucide-react";
+import { Upload } from "lucide-react";
 
 interface FileUploadProps {
   onFileUpload: (url: string, type: string) => void;
@@ -73,11 +73,7 @@ export default function FileUpload({ onFileUpload, disabled = false, className =
     }
   };
 
-  const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return <Image className="w-4 h-4" />;
-    if (type.startsWith('video/')) return <Video className="w-4 h-4" />;
-    return <File className="w-4 h-4" />;
-  };
+  // Removed unused getFileIcon function
 
   if (variant === "icon") {
     return (

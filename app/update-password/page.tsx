@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function UpdatePasswordPage() {
@@ -11,7 +11,7 @@ export default function UpdatePasswordPage() {
 
   // Levanta la sesión del hash (#access_token=...&type=recovery)
   useEffect(() => {
-    const sub = supabase.auth.onAuthStateChange((_e, _s) => {
+    const sub = supabase.auth.onAuthStateChange(() => {
       // no hace falta nada: supabase-js ya parsea el hash cuando hay evento
     });
     // Trigger para forzar la captura del hash si aplica

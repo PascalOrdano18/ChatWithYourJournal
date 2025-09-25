@@ -2,19 +2,13 @@
 "use client";
 
 import { useState } from "react";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/shadcn";
-import { format } from "date-fns";
 import Image from "next/image";
 import FileUpload from "../FileUpload";
 import { X } from "lucide-react";
 
-type JournalEntry = {
-    id: string;
-    entry_date: string;
-    content: any; // BlockNote content
-    created_at: string;
-};
+// Removed unused BlockNoteContent type
+
+// Removed unused JournalEntry type
 
 type Message = {
     role: "user" | "assistant";
@@ -26,26 +20,7 @@ type Message = {
     }>;
 };
 
-// Component to render BlockNote content in chat
-function ChatJournalEntry({ entry }: { entry: JournalEntry }) {
-    const editor = useCreateBlockNote({ 
-        initialContent: entry.content
-    });
-    
-    return (
-        <div className="p-3 bg-khaki-50/80 dark:bg-cal-poly-green-800/80 rounded-lg border border-cal-poly-green-200 dark:border-cal-poly-green-600 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-cal-poly-green-100 dark:border-cal-poly-green-700">
-                <div className="w-2 h-2 bg-khaki-500 rounded-full flex-shrink-0"></div>
-                <span className="text-xs font-medium text-cal-poly-green-600 dark:text-cal-poly-green-300 font-serif">
-                    {format(new Date(entry.entry_date), "MMM do, yyyy")}
-                </span>
-            </div>
-            <div className="prose prose-sm max-w-none dark:prose-invert [&_.bn-editor]:text-sm [&_.bn-editor]:leading-relaxed [&_img]:max-w-[200px] [&_img]:h-auto [&_img]:rounded-md [&_img]:border [&_img]:border-cal-poly-green-200 [&_img]:dark:border-cal-poly-green-600 [&_img]:shadow-sm [&_p]:mb-2 [&_p:last-child]:mb-0">
-                <BlockNoteView editor={editor} editable={false} />
-            </div>
-        </div>
-    );
-}
+// Removed unused ChatJournalEntry component
 
 // Component to render attachments
 function AttachmentPreview({ attachment, onRemove }: { 
@@ -194,8 +169,8 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                 content: data.answer
             };
             setMessages(prevMsg => [...prevMsg, aiMessage]);
-        } catch (err) {
-            // swallow
+        } catch (err: unknown) {
+            console.error('Chat error:', err);
         } finally {
             setLoading(false);
         }

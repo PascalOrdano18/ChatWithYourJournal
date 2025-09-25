@@ -8,7 +8,14 @@ import { openai } from "@ai-sdk/openai";
 type BlockNoteContent = {
     type: string;
     content?: {text: string}[];
-    children?: unknown[];
+    children?: BlockNoteContent[];
+    props?: {
+        url?: string;
+        alt?: string;
+        name?: string;
+        mime?: string;
+        type?: string;
+    };
 }
 
 const blockNoteToPlainText = (blocks:BlockNoteContent[]): string => {
@@ -36,12 +43,7 @@ const calculateRelevance = (entryText: string, question: string): number => {
     return matches / questionWords.length;
 }
 
-type JournalEntry = {
-    id: string;
-    entry_date: string;
-    content: any;
-    created_at: string;
-}
+// Removed unused JournalEntry type
 
 // Intent detection for better responses
 type Intent = "media_request" | "entry_lookup" | "general";
@@ -101,11 +103,11 @@ function extractDateFromQuestion(question: string): string | null {
 }
 
 // Extract image URLs from BlockNote content
-function extractImageUrls(content: any): string[] {
+function extractImageUrls(content: BlockNoteContent[]): string[] {
     if (!Array.isArray(content)) return [];
     const urls: string[] = [];
     
-    const walk = (blocks: any[]) => {
+    const walk = (blocks: BlockNoteContent[]) => {
         for (const block of blocks) {
             if (block?.type === 'image' && block?.props?.url) {
                 urls.push(block.props.url);
@@ -122,7 +124,11 @@ function extractImageUrls(content: any): string[] {
 
 
 export async function POST(req: Request){
-    const { question, attachments, history = [] } = await req.json();
+    const { question, attachments, history = [] }: {
+        question: string;
+        attachments?: Array<{ type: string; url: string }>;
+        history?: Array<{ role: string; content: string }>;
+    } = await req.json();
     
     if (!process.env.OPENAI_API_KEY) {
         return NextResponse.json({ answer: "Missing OpenAI API key." }, { status: 500 });
@@ -237,7 +243,7 @@ export async function POST(req: Request){
         attachmentContext = `
         
         ### User has shared ${attachments.length} media file(s):
-        ${attachments.map((att: any, index: number) => 
+        ${attachments.map((att: { type: string; url: string }, index: number) => 
             `- File ${index + 1}: ${att.type.startsWith('image/') ? 'Image' : 'Video'} - ${att.url}`
         ).join('\n')}
         
@@ -248,7 +254,7 @@ export async function POST(req: Request){
 
     const chatHistory = Array.isArray(history) && history.length > 0
         ? history
-            .map((m: any) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${typeof m.content === 'string' ? m.content : ''}`)
+            .map((m: { role: string; content: string }) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${typeof m.content === 'string' ? m.content : ''}`)
             .join('\n')
         : '';
 

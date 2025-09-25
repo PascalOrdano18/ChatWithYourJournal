@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { format, isToday } from "date-fns";
+import { format } from "date-fns";
 
 import { supabase }  from "@/lib/supabase";
 import { useUser } from "@/hooks/useUser";
@@ -28,10 +28,23 @@ const JournalEditor = dynamic(
 );
 
 
+type BlockNoteContent = {
+    type: string;
+    content?: {text: string}[];
+    children?: BlockNoteContent[];
+    props?: {
+        url?: string;
+        alt?: string;
+        name?: string;
+        mime?: string;
+        type?: string;
+    };
+}
+
 type EntryRow = {
   id: string,
   entry_date: string,
-  content: any,
+  content: BlockNoteContent[],
   created_at: string
 }
 
@@ -39,7 +52,7 @@ export default function Journal() {
 
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [draft, setDraft] = useState<any>([]);  // current editor JSON
+  const [draft, setDraft] = useState<BlockNoteContent[]>([]);  // current editor JSON
 
   const JOURNAL_ENTRIES_TABLE = 'journal_entries';
   const { user, loading } = useUser();
@@ -110,8 +123,11 @@ export default function Journal() {
   );
 
 
-  function ReadOnlyNote({ content }: { content: any }) {
-    const editor = useCreateBlockNote({ initialContent: content });
+  function ReadOnlyNote({ content }: { content: BlockNoteContent[] }) {
+    const editor = useCreateBlockNote({ 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialContent: content as any 
+    });
     return <BlockNoteView editor={editor} editable={false} />;
   }
 
