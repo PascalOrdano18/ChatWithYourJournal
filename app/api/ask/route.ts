@@ -141,11 +141,11 @@ export async function POST(req: Request){
     let authError;
     
     try {
-        supabase = createServerSupabaseClientFromRequest(req);
+        supabase = await createServerSupabaseClientFromRequest(req);
         const authResult = await supabase.auth.getUser();
         user = authResult.data.user;
         authError = authResult.error;
-    } catch (error) {
+    } catch {
         // Fallback to the original method
         try {
             supabase = await createServerSupabaseClient();

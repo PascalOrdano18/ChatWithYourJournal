@@ -43,8 +43,8 @@ export const createServerSupabaseClient = async () => {
 };
 
 // Alternative server client that works better in production
-export const createServerSupabaseClientFromRequest = (request: Request) => {
-    const { createServerClient } = require("@supabase/ssr");
+export const createServerSupabaseClientFromRequest = async (request: Request) => {
+    const { createServerClient } = await import("@supabase/ssr");
     
     return createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
