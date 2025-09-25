@@ -153,7 +153,7 @@ export default function Journal() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-[hsl(var(--primary))] rounded-full"></div>
-                  <h2 className="text-sm font-semibold text-[hsl(var(--primary))] tracking-wide uppercase">
+                  <h2 className="text-sm font-semibold text-white tracking-wide uppercase">
                     Calendar
                   </h2>
                 </div>
@@ -183,17 +183,17 @@ export default function Journal() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-[hsl(var(--primary))] rounded-full"></div>
-                  <h2 className="text-sm font-semibold text-[hsl(var(--primary))] tracking-wide uppercase">
+                  <h2 className="text-sm font-semibold text-white tracking-wide uppercase">
                     Overview
                   </h2>
                 </div>
               <div className="space-y-3 bg-white/70 dark:bg-gray-950/50 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/60 dark:border-gray-800/60">
                   <div className="flex items-center justify-between py-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Total entries</span>
+                    <span className="text-sm text-white">Total entries</span>
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">{entries.length}</span>
                   </div>
                   <div className="flex items-center justify-between py-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Selected</span>
+                    <span className="text-sm text-white">Selected</span>
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
                       {selectedDate ? format(selectedDate, "MMM d") : "None"}
                     </span>
@@ -212,7 +212,7 @@ export default function Journal() {
                   <h1 className="text-2xl font-bold text-[hsl(var(--primary))]">
                     {todaysEntry ? "Edit Entry" : "New Entry"}
                   </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-white">
                     {selectedDate
                       ? `Writing for ${format(selectedDate, "MMMM do, yyyy")}`
                       : "Write about your day"}
@@ -242,7 +242,7 @@ export default function Journal() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-[hsl(var(--primary))] rounded-full"></div>
-                  <h2 className="text-xl font-bold text-[hsl(var(--primary))]">
+                  <h2 className="text-xl font-bold text-white">
                     Recent Entries
                   </h2>
                 </div>

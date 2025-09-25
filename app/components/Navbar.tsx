@@ -23,7 +23,7 @@ export default function Navbar({
             <h1 className="text-2xl md:text-3xl font-serif font-bold text-[hsl(var(--primary))]">
               {title}
             </h1>
-            <p className="text-sm text-[hsl(var(--primary))]/80 font-serif mt-1">
+            <p className="text-sm text-white font-serif mt-1">
               {subtitle || defaultSubtitle}
             </p>
           </div>

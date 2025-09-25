@@ -196,7 +196,7 @@ export function Calendar({
           <ChevronLeftIcon className="h-4 w-4" />
         </Button>
         
-        <h2 className="text-xl font-semibold text-[hsl(var(--primary))]">
+        <h2 className="text-xl font-semibold text-white">
           {monthNames[month]} {year}
         </h2>
         

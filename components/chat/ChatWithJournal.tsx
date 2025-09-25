@@ -216,16 +216,16 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
             {(compact || onClose) && (
                 <div className={`${frameless ? 'border-transparent bg-transparent backdrop-blur-0' : 'border-white/50 dark:border-white/10 bg-white/40 dark:bg-gray-900/30 backdrop-blur-sm'} flex items-center justify-between px-4 py-3 border-b`}>
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                        <div className="w-2 h-2 rounded-full bg-[hsl(var(--primary))]"></div>
                         <span className="text-sm font-serif font-semibold text-gray-900 dark:text-white">{title || 'Chat'}</span>
                     </div>
                     {onClose && (
                         <button
                             onClick={onClose}
-                            className={`p-2 rounded-md transition-colors focus:outline-none ${frameless ? 'hover:bg-white/10' : 'hover:bg-white/50 dark:hover:bg-white/10'}`}
+                            className={`p-2 rounded-md transition-colors focus:outline-none ${frameless ? 'hover:bg-white/20 text-white' : 'hover:bg-white/50 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200'}`}
                             aria-label="Close"
                         >
-                            <X className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                            <X className="w-4 h-4" />
                         </button>
                     )}
                 </div>
@@ -237,7 +237,7 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                         <div className="text-center text-gray-600 dark:text-gray-400">
                             <div className={`${compact ? 'text-3xl' : 'text-4xl'} mb-2`}>💭</div>
                             <p className={`${compact ? 'text-sm' : 'text-base'} font-serif font-semibold text-gray-900 dark:text-white mb-1`}>Chat with your journal</p>
-                            <p className={`${compact ? 'text-xs' : 'text-sm'} font-serif text-gray-700 dark:text-gray-300`}>Ask questions about your entries or share images/videos</p>
+                            <p className={`${compact ? 'text-xs' : 'text-sm'} font-serif text-white`}>Ask questions about your entries or share images/videos</p>
                         </div>
                     </div>
                 )}
@@ -251,7 +251,7 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                             <div 
                                 className={`px-4 py-2.5 rounded-2xl max-w-full ${
                                     message.role === "user" 
-                                        ? 'bg-blue-600 text-white rounded-br-sm shadow-sm' 
+                                        ? 'bg-[hsl(var(--primary))] text-white rounded-br-sm shadow-sm' 
                                         : 'bg-white/70 dark:bg-gray-700/70 backdrop-blur border border-gray-200/60 dark:border-gray-600/60 text-gray-900 dark:text-white rounded-bl-sm shadow-sm'
                                 }`}
                             >
@@ -287,7 +287,7 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                                         <div className="w-1.5 h-1.5 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
                                         <div className="w-1.5 h-1.5 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
                                     </div>
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Thinking...</span>
+                                    <span className="text-sm text-white">Thinking...</span>
                                 </div>
                             </div>
                         </div>
@@ -296,7 +296,7 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
             </div>
             
             {/* Input Container */}
-            <div className={`border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 ${compact ? 'px-4 py-3' : 'px-6 py-4'}`}>
+            <div className={`border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 ${compact ? 'px-4 py-3' : 'px-6 py-4'}`}>
                 {/* Attachments Preview */}
                 {attachments.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-2">
@@ -322,7 +322,7 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                         onChange={(e) => handleChange(e.target.value)}
                         disabled={loading}
                         placeholder={compact ? 'Message...' : 'Ask about your journal entries or share images/videos...'}
-                        className={`flex-1 resize-none rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-[hsl(var(--primary))] transition-colors min-h-[38px] max-h-24 ${compact ? 'bg-white/90 dark:bg-gray-800/90 border border-gray-300 dark:border-gray-600' : 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600'}`}
+                        className={`flex-1 resize-none rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-white dark:placeholder-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-[hsl(var(--primary))] transition-colors min-h-[38px] max-h-24 ${compact ? 'bg-white dark:bg-gray-700 border border-[hsl(var(--primary))]' : 'bg-white dark:bg-gray-800 border border-[hsl(var(--primary))]'}`}
                         rows={1}
                         onInput={(e) => {
                             const target = e.target as HTMLTextAreaElement;

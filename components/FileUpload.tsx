@@ -93,7 +93,7 @@ export default function FileUpload({ onFileUpload, disabled = false, className =
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isUploading}
-          className={`w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm`}
+          className={`w-10 h-10 rounded-lg border border-[hsl(var(--primary))] flex items-center justify-center text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm`}
           title={isUploading ? "Uploading..." : "Upload file"}
         >
           {isUploading ? (
