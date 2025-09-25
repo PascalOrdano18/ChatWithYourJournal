@@ -1,14 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase";
+import { createServerSupabaseClient, createServerSupabaseClientFromRequest } from "@/lib/supabase";
 import sharp from "sharp";
 
 export async function POST(req: NextRequest) {
   try {
     // Create server-side Supabase client with user session
-    const supabase = await createServerSupabaseClient();
+    // Try the new method first, fallback to the old one
+    let supabase;
+    let user;
+    let authError;
     
-    // Get the authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    try {
+      supabase = createServerSupabaseClientFromRequest(req);
+      const authResult = await supabase.auth.getUser();
+      user = authResult.data.user;
+      authError = authResult.error;
+    } catch (error) {
+      // Fallback to the original method
+      try {
+        supabase = await createServerSupabaseClient();
+        const authResult = await supabase.auth.getUser();
+        user = authResult.data.user;
+        authError = authResult.error;
+      } catch (fallbackError) {
+        console.error('Supabase auth error:', fallbackError);
+        return NextResponse.json({ 
+          error: "Authentication error. Please try logging in again." 
+        }, { status: 401 });
+      }
+    }
     
     if (authError || !user) {
       return NextResponse.json({ 

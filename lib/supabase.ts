@@ -6,7 +6,7 @@ export const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Server-side Supabase client (for API routes) - Current Best Practice for Next.js 15
+// Server-side Supabase client (for API routes) - Updated for better production support
 export const createServerSupabaseClient = async () => {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
@@ -36,6 +36,38 @@ export const createServerSupabaseClient = async () => {
                         // This can be ignored if you have middleware refreshing
                         // user sessions.
                     }
+                },
+            },
+        }
+    );
+};
+
+// Alternative server client that works better in production
+export const createServerSupabaseClientFromRequest = (request: Request) => {
+    const { createServerClient } = require("@supabase/ssr");
+    
+    return createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                get(name: string) {
+                    const cookieHeader = request.headers.get('cookie');
+                    if (!cookieHeader) return undefined;
+                    
+                    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+                        const [key, value] = cookie.trim().split('=');
+                        acc[key] = value;
+                        return acc;
+                    }, {} as Record<string, string>);
+                    
+                    return cookies[name];
+                },
+                set() {
+                    // No-op for server-side
+                },
+                remove() {
+                    // No-op for server-side
                 },
             },
         }
