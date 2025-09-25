@@ -30,7 +30,7 @@ export default function Navbar({
           <div className="flex items-center gap-3">
             <button
               onClick={onSignOut}
-              className="px-3 py-2 rounded-lg text-sm text-smoky-black-700 dark:text-khaki-200 hover:bg-[hsl(var(--primary)/0.1)] transition-colors"
+              className="px-3 py-2 rounded-lg text-sm text-[hsl(var(--primary))] hover:bg-[hsl(var(--primary)/0.1)] transition-colors font-medium"
             >
               Sign Out
             </button>
