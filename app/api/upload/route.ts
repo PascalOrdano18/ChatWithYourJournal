@@ -119,22 +119,29 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // Prefer a signed URL (works for private buckets). Fallback to public URL if signing fails.
-    let signedUrl: string | null = null;
-    const signed = await supabase.storage
+    // Get public URL for the uploaded file
+    const { data: publicUrlData } = supabase.storage
       .from('journal-media')
-      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
-    if (!signed.error && signed.data?.signedUrl) {
-      signedUrl = signed.data.signedUrl;
-    } else {
-      const { data: pub } = supabase.storage
+      .getPublicUrl(fileName);
+    
+    const publicUrl = publicUrlData.publicUrl;
+    
+    // Also try to create a signed URL as backup
+    let signedUrl: string | null = null;
+    try {
+      const signed = await supabase.storage
         .from('journal-media')
-        .getPublicUrl(fileName);
-      signedUrl = pub.publicUrl;
+        .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
+      if (!signed.error && signed.data?.signedUrl) {
+        signedUrl = signed.data.signedUrl;
+      }
+    } catch (signError) {
+      console.warn('Failed to create signed URL:', signError);
     }
 
     return NextResponse.json({
-      url: signedUrl,
+      url: signedUrl || publicUrl, // Use signed URL if available, otherwise public URL
+      publicUrl: publicUrl, // Always include public URL
       fileName: data.path,
       type: targetMime,
       size: isHeic && uploadBuffer instanceof Buffer ? uploadBuffer.byteLength : file.size

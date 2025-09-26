@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       }
     ],
+    // Disable image optimization for external URLs to avoid CORS issues
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 };
 

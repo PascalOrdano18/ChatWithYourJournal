@@ -36,7 +36,16 @@ function AttachmentPreview({ attachment, onRemove }: {
                     width={80}
                     height={80}
                     className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
-                    unoptimized={attachment.url.includes('supabase.co')}
+                    unoptimized={true}
+                    onError={(e) => {
+                        console.log('Attachment image failed to load:', attachment.url);
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'w-20 h-20 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600';
+                        errorDiv.innerHTML = '<div class="text-xs text-gray-500 dark:text-gray-400 text-center">⚠️</div>';
+                        target.parentNode?.appendChild(errorDiv);
+                    }}
                 />
             ) : attachment.type.startsWith('video/') ? (
                 <video 
@@ -76,17 +85,21 @@ function MarkdownContent({ content }: { content: string }) {
                                     width={800}
                                     height={600}
                                     className="max-w-full max-h-96 object-contain rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm"
-                                    unoptimized={url.includes('supabase.co')} // Disable optimization for Supabase URLs
+                                    unoptimized={true} // Always disable optimization for external URLs
                                     onError={(e) => {
                                         console.log('Image failed to load:', url);
-                                        // Fallback to regular img tag if Next.js Image fails
+                                        // Show error message instead of hiding
                                         const target = e.target as HTMLImageElement;
                                         target.style.display = 'none';
-                                        const fallback = document.createElement('img');
-                                        fallback.src = url;
-                                        fallback.alt = alt || 'Image';
-                                        fallback.className = 'max-w-full max-h-96 object-contain rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm';
-                                        target.parentNode?.appendChild(fallback);
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.className = 'max-w-full max-h-96 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4';
+                                        errorDiv.innerHTML = `
+                                            <div class="text-center text-gray-500 dark:text-gray-400">
+                                                <div class="text-sm">⚠️ Imagen no disponible</div>
+                                                <div class="text-xs mt-1">${url}</div>
+                                            </div>
+                                        `;
+                                        target.parentNode?.appendChild(errorDiv);
                                     }}
                                 />
                             </div>

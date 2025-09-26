@@ -50,17 +50,53 @@ type Intent = "media_request" | "entry_lookup" | "general";
 
 function detectIntent(question: string): Intent {
     const s = question.toLowerCase();
-    const mediaWords = /(foto|fotos|imagen|imágenes|imagenes|media|picture|pictures|photos|muestra|muéstrame|envia|envía)/.test(s);
-    const asksWhatHappened = /qué\s+(hice|pasó|ocurrió)/.test(s) || /que\s+(hice|paso|ocurrio)/.test(s);
     
-    if (mediaWords) return "media_request";
-    if (asksWhatHappened) return "entry_lookup";
+    // More comprehensive media request detection
+    const mediaWords = /(foto|fotos|imagen|imágenes|imagenes|media|picture|pictures|photos|muestra|muéstrame|envia|envía|ver|quiero\s+ver|mostrar|mostrarme|enseña|enseñame|enseñar)/.test(s);
+    
+    // Detect requests for specific content with images
+    const contentWithImages = /(qué\s+(hice|pasó|ocurrió|comí|bebí|vi|fui|estuve)|que\s+(hice|paso|ocurrio|comi|bebi|vi|fui|estuve)|cómo\s+(estaba|estuve|fue)|como\s+(estaba|estuve|fue)|dónde\s+(estuve|fui|estaba)|donde\s+(estuve|fui|estaba))/.test(s);
+    
+    // Detect date-specific requests
+    const dateRequest = /(ayer|hoy|mañana|esta\s+semana|la\s+semana\s+pasada|el\s+mes\s+pasado|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|\d{1,2}\s+de\s+\w+)/.test(s);
+    
+    if (mediaWords || (contentWithImages && dateRequest)) return "media_request";
+    if (contentWithImages) return "entry_lookup";
     return "general";
 }
 
 // Extract and parse dates from user questions
 function extractDateFromQuestion(question: string): string | null {
     const s = question.toLowerCase();
+    
+    // Handle relative dates first
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (s.includes('ayer')) {
+        return yesterday.toISOString().split('T')[0];
+    }
+    if (s.includes('hoy')) {
+        return today.toISOString().split('T')[0];
+    }
+    if (s.includes('mañana')) {
+        return tomorrow.toISOString().split('T')[0];
+    }
+    
+    // Handle "esta semana" and "la semana pasada"
+    if (s.includes('esta semana')) {
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        return startOfWeek.toISOString().split('T')[0];
+    }
+    if (s.includes('la semana pasada') || s.includes('semana pasada')) {
+        const lastWeek = new Date(today);
+        lastWeek.setDate(today.getDate() - 7);
+        return lastWeek.toISOString().split('T')[0];
+    }
     
     // Look for patterns like "22 de agosto", "22 agosto", "agosto 22", etc.
     const datePatterns = [
@@ -211,43 +247,109 @@ export async function POST(req: Request){
     // Handle media requests - return direct image URLs prioritizing date/keywords
     if (intent === "media_request") {
         const stopwords = new Set([
-            'de','del','la','el','los','las','en','y','o','a','un','una','unos','unas','que','mi','mis','mio','mía','mias','míos','sobre','para','por','con','al','lo'
+            'de','del','la','el','los','las','en','y','o','a','un','una','unos','unas','que','mi','mis','mio','mía','mias','míos','sobre','para','por','con','al','lo','foto','fotos','imagen','imágenes','imagenes','media','picture','pictures','photos','muestra','muéstrame','envia','envía','ver','quiero'
         ]);
         const loweredQuestion = question.toLowerCase();
         const keywords = loweredQuestion
             .split(/[^a-záéíóúñü0-9]+/i)
             .filter((w: string) => w.length > 2 && !stopwords.has(w));
 
-        // candidates with images
+        // Get all entries with images
         let candidates = entriesWithRelevance.filter(e => e.imageUrls.length > 0);
 
-        // if user asked a specific date, filter by exact date first
+        if (candidates.length === 0) {
+            return NextResponse.json({
+                answer: "No encontré imágenes en tus entradas del journal."
+            });
+        }
+
+        // If user asked for a specific date, prioritize exact date matches
         if (questionDate) {
-            const dateMatches = candidates.filter(e => e.entry_date === questionDate);
-            if (dateMatches.length > 0) {
-                candidates = dateMatches;
+            const exactDateMatches = candidates.filter(e => e.entry_date === questionDate);
+            if (exactDateMatches.length > 0) {
+                candidates = exactDateMatches;
+            } else {
+                // If no exact date match, look for nearby dates (within 3 days)
+                const targetDate = new Date(questionDate);
+                candidates = candidates.filter(e => {
+                    const entryDate = new Date(e.entry_date);
+                    const diffDays = Math.abs((targetDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
+                    return diffDays <= 3;
+                });
             }
         }
 
-        // Boost candidates that include any keyword from the question
-        candidates = candidates
-            .map(e => {
-                const text = e.text.toLowerCase();
-                const keywordHits = keywords.reduce((acc: number, k: string) => acc + (text.includes(k) ? 1 : 0), 0);
-                return { ...e, mediaScore: e.relevance + keywordHits * 0.3 };
-            })
-            .sort((a, b) => b.mediaScore - a.mediaScore);
+        // If still no candidates after date filtering, use all entries with images
+        if (candidates.length === 0) {
+            candidates = entriesWithRelevance.filter(e => e.imageUrls.length > 0);
+        }
 
-        const chosen = candidates[0];
-        if (chosen) {
-            const imageList = chosen.imageUrls.map(url => `![Imagen](${url})`).join('\n');
+        // Calculate better relevance scores
+        candidates = candidates.map(e => {
+            const text = e.text.toLowerCase();
+            let score = e.relevance; // Base relevance from text matching
+            
+            // Boost score for keyword matches in text
+            const keywordHits = keywords.reduce((acc: number, k: string) => {
+                const matches = (text.match(new RegExp(k, 'g')) || []).length;
+                return acc + matches;
+            }, 0);
+            
+            // Boost score for date proximity if no exact date match
+            if (questionDate && e.entry_date !== questionDate) {
+                const targetDate = new Date(questionDate);
+                const entryDate = new Date(e.entry_date);
+                const diffDays = Math.abs((targetDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
+                score += Math.max(0, 0.5 - (diffDays * 0.1)); // Closer dates get higher scores
+            }
+            
+            // Boost score for exact date match
+            if (questionDate && e.entry_date === questionDate) {
+                score += 1.0;
+            }
+            
+            // Boost score for keyword matches
+            score += keywordHits * 0.4;
+            
+            // Boost score for more recent entries (within last 30 days)
+            const entryDate = new Date(e.entry_date);
+            const now = new Date();
+            const daysDiff = (now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysDiff <= 30) {
+                score += 0.2;
+            }
+            
+            return { ...e, mediaScore: score };
+        });
+
+        // Sort by media score and get top candidates
+        candidates.sort((a, b) => b.mediaScore - a.mediaScore);
+        
+        // Get top 3 candidates to show variety
+        const topCandidates = candidates.slice(0, 3);
+        
+        if (topCandidates.length === 0) {
             return NextResponse.json({
-                answer: `Aquí están las imágenes de ${chosen.entry_date}:\n\n${imageList}`
+                answer: "No encontré imágenes relevantes para tu consulta."
+            });
+        }
+
+        // Format response with better context
+        let response = "";
+        if (topCandidates.length === 1) {
+            const chosen = topCandidates[0];
+            const imageList = chosen.imageUrls.map(url => `![Imagen](${url})`).join('\n');
+            response = `Aquí están las imágenes de ${chosen.entry_date}:\n\n${imageList}`;
+        } else {
+            response = "Encontré estas imágenes relevantes:\n\n";
+            topCandidates.forEach((candidate, index) => {
+                const imageList = candidate.imageUrls.map(url => `![Imagen](${url})`).join('\n');
+                response += `**${candidate.entry_date}:**\n${imageList}\n\n`;
             });
         }
 
         return NextResponse.json({
-            answer: "No encontré imágenes en tus entradas relevantes para esta consulta."
+            answer: response
         });
     }
 
