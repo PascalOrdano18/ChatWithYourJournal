@@ -285,7 +285,7 @@ export async function POST(req: Request){
         }
 
         // Calculate better relevance scores
-        candidates = candidates.map(e => {
+        const candidatesWithScore = candidates.map(e => {
             const text = e.text.toLowerCase();
             let score = e.relevance; // Base relevance from text matching
             
@@ -319,14 +319,14 @@ export async function POST(req: Request){
                 score += 0.2;
             }
             
-            return { ...e, mediaScore: score } as typeof e & { mediaScore: number };
+            return { ...e, mediaScore: score };
         });
 
         // Sort by media score and get top candidates
-        candidates.sort((a, b) => b.mediaScore - a.mediaScore);
+        candidatesWithScore.sort((a, b) => b.mediaScore - a.mediaScore);
         
         // Get top 3 candidates to show variety
-        const topCandidates = candidates.slice(0, 3);
+        const topCandidates = candidatesWithScore.slice(0, 3);
         
         if (topCandidates.length === 0) {
             return NextResponse.json({
