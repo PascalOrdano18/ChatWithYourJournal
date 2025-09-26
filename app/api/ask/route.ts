@@ -319,7 +319,7 @@ export async function POST(req: Request){
                 score += 0.2;
             }
             
-            return { ...e, mediaScore: score };
+            return { ...e, mediaScore: score } as typeof e & { mediaScore: number };
         });
 
         // Sort by media score and get top candidates
@@ -342,7 +342,7 @@ export async function POST(req: Request){
             response = `Aquí están las imágenes de ${chosen.entry_date}:\n\n${imageList}`;
         } else {
             response = "Encontré estas imágenes relevantes:\n\n";
-            topCandidates.forEach((candidate, index) => {
+            topCandidates.forEach((candidate) => {
                 const imageList = candidate.imageUrls.map(url => `![Imagen](${url})`).join('\n');
                 response += `**${candidate.entry_date}:**\n${imageList}\n\n`;
             });
