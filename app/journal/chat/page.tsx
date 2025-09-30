@@ -35,7 +35,7 @@ export default function JournalChatPage() {
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       <Navbar 
         title="Chat with Journal"
-        subtitle="🔍 Chat with your Journal"
+        titleHref="/journal"
         onSignOut={handleSignOut}
       />
       <div className="container mx-auto max-w-5xl px-4 py-6">

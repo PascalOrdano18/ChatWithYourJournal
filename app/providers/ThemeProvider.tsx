@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { ThemeContext, useThemeLogic } from "@/hooks/useTheme";
 
 interface ThemeProviderProps {
@@ -9,6 +9,13 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { theme, toggleTheme, mounted } = useThemeLogic();
+
+  // Agrega una flag class una vez que el tema se resuelve para habilitar las transiciones de CSS de forma segura
+  useEffect(() => {
+    if (mounted && typeof document !== "undefined") {
+      document.documentElement.classList.add("theme-ready");
+    }
+  }, [mounted]);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

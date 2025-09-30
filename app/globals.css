@@ -125,6 +125,9 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+}
+
+.theme-ready body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

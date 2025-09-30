@@ -47,7 +47,7 @@ export default function JournalEditor({
       // Convert HEIC/HEIF to JPEG in-browser before upload
       let fileToUpload: File = file;
       try {
-        if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+        if (isImageUrl(file.name)) {
           const heic2any = (await import('heic2any')).default as (options: { blob: File; toType: string; quality: number }) => Promise<BlobPart>;
           const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.8 });
           fileToUpload = new File([blob as BlobPart], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });

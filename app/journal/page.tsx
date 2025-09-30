@@ -48,13 +48,20 @@ type EntryRow = {
   created_at: string
 }
 
+const isTodayCheck = (date: Date) => {
+  if (!date) return false;
+  return format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+}
+
+const JOURNAL_ENTRIES_TABLE = 'journal_entries';
+
 export default function Journal() {
 
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [draft, setDraft] = useState<BlockNoteContent[]>([]);  // current editor JSON
 
-  const JOURNAL_ENTRIES_TABLE = 'journal_entries';
+  
   const { user, loading } = useUser();
   const router = useRouter();
 
@@ -139,10 +146,7 @@ export default function Journal() {
     router.push('/');
   }
 
-  const isTodayCheck = (date: Date) => {
-    if (!date) return false;
-    return format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-  }
+  
     
 
   const entryDates = entries.map((entry) => {
@@ -151,10 +155,6 @@ export default function Journal() {
     const localDate = new Date(year, month - 1, day); // month is 0-indexed
     return localDate;
   });
-
-  // removed noisy logging of entryDates
-
-
 
 
   return (

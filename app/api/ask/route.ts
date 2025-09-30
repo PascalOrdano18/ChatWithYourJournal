@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient, createServerSupabaseClientFromRequest } from "@/lib/supabase";
-import { generateText } from "ai";
+import { convertToModelMessages, generateText, streamText, UIMessage } from "ai";
 import { openai } from "@ai-sdk/openai";
 
 
@@ -28,26 +28,6 @@ const blockNoteToPlainText = (blocks:BlockNoteContent[]): string => {
        .join("\n");
 }
 
-// Simple relevance scoring based on keyword matching
-const calculateRelevance = (entryText: string, question: string): number => {
-    const questionWords = question.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-    const entryWords = entryText.toLowerCase().split(/\s+/);
-    
-    let matches = 0;
-    questionWords.forEach(qWord => {
-        if (entryWords.some(eWord => eWord.includes(qWord) || qWord.includes(eWord))) {
-            matches++;
-        }
-    });
-    
-    return matches / questionWords.length;
-}
-
-// Removed unused JournalEntry type
-
-// Removed hardcoded intent detection - now handled by AI model
-
-// Removed hardcoded date extraction - now handled by AI model
 
 // Extract image URLs from BlockNote content
 function extractImageUrls(content: BlockNoteContent[]): string[] {
@@ -72,10 +52,8 @@ function extractImageUrls(content: BlockNoteContent[]): string[] {
 
 
 export async function POST(req: Request){
-    const { question, attachments, history = [] }: {
-        question: string;
-        attachments?: Array<{ type: string; url: string }>;
-        history?: Array<{ role: string; content: string }>;
+    const { messages }: {
+        messages: UIMessage[];
     } = await req.json();
     
     if (!process.env.OPENAI_API_KEY) {
@@ -156,26 +134,6 @@ export async function POST(req: Request){
 
     console.log( "context", context);
 
-    // Build prompt with attachments if provided
-    let attachmentContext = "";
-    if (attachments && attachments.length > 0) {
-        attachmentContext = `
-        
-        ### User has shared ${attachments.length} media file(s):
-        ${attachments.map((att: { type: string; url: string }, index: number) => 
-            `- File ${index + 1}: ${att.type.startsWith('image/') ? 'Image' : 'Video'} - ${att.url}`
-        ).join('\n')}
-        
-        Please consider these media files in your response. If they are images, describe what you see and how they might relate to the journal entries. If they are videos, acknowledge them and ask if the user wants to discuss the content.
-        `;
-    }
-  
-
-    const chatHistory = Array.isArray(history) && history.length > 0
-        ? history
-            .map((m: { role: string; content: string }) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${typeof m.content === 'string' ? m.content : ''}`)
-            .join('\n')
-        : '';
 
     const prompt = `
         You are an empathetic and insightful journal companion. 
@@ -200,12 +158,6 @@ export async function POST(req: Request){
         ### Data:
         Journal Context:
         ${context}
-        ${attachmentContext}
-
-        ${chatHistory ? `### Conversation so far (recent turns):\n${chatHistory}` : ''}
-
-        User Question:
-        ${question}
 
         ### Task:
         Provide a clear, reflective, and helpful answer for the user based only on the journal context above.
@@ -214,10 +166,11 @@ export async function POST(req: Request){
 
         Answer:
         `;
-    const { text } = await generateText({
-        model: openai("gpt-4o-mini"),
-        prompt
-    });
+        const result = streamText({
+            model: openai('gpt-4.1-mini'),
+            system: prompt,
+            messages: convertToModelMessages(messages),
+          });
 
-    return NextResponse.json({ answer: text });
+        return result.toUIMessageStreamResponse();
 }

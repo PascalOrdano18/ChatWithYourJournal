@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
   // Increase body size limit for file uploads
   experimental: {
     serverComponentsExternalPackages: ['sharp'],
+    reactCompiler: true,
   },
   // Configure API routes to handle larger payloads
   api: {

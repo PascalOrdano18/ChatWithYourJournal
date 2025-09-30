@@ -2,25 +2,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
-import FileUpload from "../FileUpload";
 import { X } from "lucide-react";
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 
-// Removed unused BlockNoteContent type
 
-// Removed unused JournalEntry type
-
-type Message = {
-    role: "user" | "assistant";
-    content: string;
-    attachments?: Array<{
-        url: string;
-        type: string;
-        name?: string;
-    }>;
-};
-
-// Removed unused ChatJournalEntry component
 
 // Component to render attachments
 function AttachmentPreview({ attachment, onRemove }: { 
@@ -129,67 +117,15 @@ type ChatWithJournalProps = {
 };
 
 export default function ChatWithJournal({ compact = false, className = "", onClose, title, frameless = false }: ChatWithJournalProps){
-    const [messages, setMessages] = useState<Message[]>([]);
+    const { messages, sendMessage, status } = useChat({
+        transport: new DefaultChatTransport({
+          api: '/api/ask',
+        }),
+      });
+    
     const [input, setInput] = useState<string>('');
-    const [loading, setLoading] = useState<boolean>(false);
-    const [attachments, setAttachments] = useState<Array<{ url: string; type: string; name?: string }>>([]);
 
 
-    const handleChange = (value: string):void => {
-        setInput(value);
-    }
-
-    const handleFileUpload = (url: string, type: string) => {
-        setAttachments(prev => [...prev, { url, type }]);
-    };
-
-    const removeAttachment = (index: number) => {
-        setAttachments(prev => prev.filter((_, i) => i !== index));
-    };
-
-    async function handleSubmit(){
-        if(!input.trim() && attachments.length === 0) return ;
-        
-        const userMessage: Message = { 
-            role: "user", 
-            content: input,
-            attachments: attachments.length > 0 ? [...attachments] : undefined
-        };
-        setMessages(prevMsg => [...prevMsg, userMessage]);
-        setInput('');
-        setAttachments([]);
-        setLoading(true);
-
-        try {
-            // recentHistory son los ultimos mensajes de chat
-            const recentHistory = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
-            const res = await fetch('/api/ask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    question: input,
-                    attachments: attachments.length > 0 ? attachments : undefined,
-                    history: recentHistory    // contexto de chat
-                }),
-            })
-
-            const data = await res.json();
-
-            const aiMessage: Message = { 
-                role: "assistant", 
-                content: data.answer
-            };
-            setMessages(prevMsg => [...prevMsg, aiMessage]);
-        } catch (err: unknown) {
-            console.error('Chat error:', err);
-        } finally {
-            setLoading(false);
-        }
-
-
-    }
     
     const compactBase = frameless
         ? "flex flex-col w-[460px] h-[600px] rounded-2xl overflow-hidden"
@@ -205,7 +141,9 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                 <div className={`${frameless ? 'border-transparent bg-transparent backdrop-blur-0' : 'border-white/50 dark:border-white/10 bg-white/40 dark:bg-gray-900/30 backdrop-blur-sm'} flex items-center justify-between px-4 py-3 border-b`}>
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[hsl(var(--primary))]"></div>
-                        <span className="text-sm font-serif font-semibold text-gray-900 dark:text-white">{title || 'Chat'}</span>
+                        <Link href="/journal/chat" className="text-sm font-serif font-semibold text-gray-900 dark:text-white hover:underline">
+                            {title || 'Chat'}
+                        </Link>
                     </div>
                     {onClose && (
                         <button
@@ -243,30 +181,25 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                                         : 'bg-white/70 dark:bg-gray-700/70 backdrop-blur border border-gray-200/60 dark:border-gray-600/60 text-gray-900 dark:text-white rounded-bl-sm shadow-sm'
                                 }`}
                             >
-                                {message.role === "assistant" ? (
-                                    <MarkdownContent content={message.content} />
-                                ) : (
-                                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
-                                )}
-                                
-                                {/* Show attachments for user messages */}
-                                {message.role === "user" && message.attachments && message.attachments.length > 0 && (
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        {message.attachments.map((attachment, idx) => (
-                                            <AttachmentPreview 
-                                                key={idx}
-                                                attachment={attachment}
-                                                onRemove={() => {}} // No remove in sent messages
-                                            />
-                                        ))}
-                                    </div>
-                                )}
+
+                                {message.parts.map((part, idx) => (
+            
+                                    part.type === 'text' ? (
+                                        message.role === 'assistant' ? (
+                                            <MarkdownContent key={idx} content={part.text} />
+                                        ) : (
+                                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{part.text}</p>
+                                        )
+                                    ) : (
+                                        ""
+                                    )
+                                ))}
                                 
                             </div>
                         </div>
                     ))}
                     
-                    {loading && (
+                    {status === 'submitted' && (
                         <div className="flex justify-start pr-12">
                             <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2.5 rounded-2xl rounded-bl-sm">
                                 <div className="flex items-center space-x-2">
@@ -285,53 +218,41 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
             
             {/* Input Container */}
             <div className={`border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 ${compact ? 'px-4 py-3' : 'px-6 py-4'}`}>
-                {/* Attachments Preview */}
-                {attachments.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-2">
-                        {attachments.map((attachment, index) => (
-                            <AttachmentPreview 
-                                key={index}
-                                attachment={attachment}
-                                onRemove={() => removeAttachment(index)}
-                            />
-                        ))}
-                    </div>
-                )}
                 
-                <div className="flex items-end space-x-3 max-w-full">
-                    <FileUpload 
-                        onFileUpload={handleFileUpload}
-                        disabled={loading}
-                        className="flex-shrink-0"
-                        variant={compact ? 'icon' : 'default'}
-                    />
+                
+                <form 
+                    onSubmit={e => {
+                        e.preventDefault();
+                        if (input.trim()) {
+                        sendMessage({ text: input });
+                        setInput('');
+                        }
+                    }} 
+                    className="flex items-end space-x-3 max-w-full">
+                    
                     <textarea
                         value={input}
-                        onChange={(e) => handleChange(e.target.value)}
-                        disabled={loading}
+                        onChange={(e) => setInput(e.target.value)}
+                        disabled={status !== 'ready'}
                         placeholder={compact ? 'Message...' : 'Ask about your journal entries or share images/videos...'}
                         className={`flex-1 resize-none rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-white dark:placeholder-white focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-[hsl(var(--primary))] transition-colors min-h-[38px] max-h-24 ${compact ? 'bg-white dark:bg-gray-700 border border-[hsl(var(--primary))]' : 'bg-white dark:bg-gray-800 border border-[hsl(var(--primary))]'}`}
                         rows={1}
-                        onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            target.style.height = 'auto';
-                            target.style.height = Math.min(target.scrollHeight, 96) + 'px';
-                        }}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
-                                if (!loading && (input.trim() || attachments.length > 0)) {
-                                    handleSubmit();
+                                if (status === 'ready' && input.trim()) {
+                                    sendMessage({text: input});
+                                    setInput('');
                                 }
                             }
                         }}
                     />
                     <button
-                        onClick={handleSubmit}
-                        disabled={loading || (!input.trim() && attachments.length === 0)}
+                        type="submit"
+                        disabled={status !== 'ready' || !input.trim()}
                         className={`text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] ${compact ? 'bg-[hsl(var(--primary))] hover:brightness-110 disabled:bg-gray-300/70 dark:disabled:bg-gray-600/70 focus:ring-offset-0' : 'bg-[hsl(var(--primary))] hover:brightness-110 disabled:bg-gray-300 dark:disabled:bg-gray-600 focus:ring-offset-2 dark:focus:ring-offset-gray-800'} disabled:cursor-not-allowed flex items-center justify-center min-w-[52px] h-[38px] shadow-sm`}
                     >
-                        {loading ? (
+                        {status !== 'ready' ? (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,7 +260,7 @@ export default function ChatWithJournal({ compact = false, className = "", onClo
                             </svg>
                         )}
                     </button>
-                </div>
+                </form>
             </div>
         </div>
     );
