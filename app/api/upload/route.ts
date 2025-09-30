@@ -4,6 +4,8 @@ import sharp from "sharp";
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('Upload request received');
+    
     // Create server-side Supabase client with user session
     // Try the new method first, fallback to the old one
     let supabase;
@@ -31,15 +33,25 @@ export async function POST(req: NextRequest) {
     }
     
     if (authError || !user) {
+      console.log('Authentication failed:', authError);
       return NextResponse.json({ 
         error: "You must be logged in to upload files." 
       }, { status: 401 });
     }
 
+    console.log('User authenticated:', user.id);
+    
     const formData = await req.formData();
     const file = formData.get('file') as File;
     
+    console.log('File received:', {
+      name: file?.name,
+      type: file?.type,
+      size: file?.size
+    });
+    
     if (!file) {
+      console.log('No file provided');
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
@@ -56,17 +68,30 @@ export async function POST(req: NextRequest) {
       'video/quicktime'
     ];
     
+    console.log('File type validation:', {
+      fileType: file.type,
+      isAllowed: allowedTypes.includes(file.type)
+    });
+    
     if (!allowedTypes.includes(file.type)) {
+      console.log('File type not supported:', file.type);
       return NextResponse.json({ 
         error: "File type not supported. Please upload images (JPEG, PNG, GIF, WebP, HEIC) or videos (MP4, WebM, QuickTime)." 
       }, { status: 400 });
     }
 
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validate file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    console.log('File size validation:', {
+      fileSize: file.size,
+      maxSize: maxSize,
+      isTooLarge: file.size > maxSize
+    });
+    
     if (file.size > maxSize) {
+      console.log('File too large:', file.size);
       return NextResponse.json({ 
-        error: "File too large. Maximum size is 10MB." 
+        error: "File too large. Maximum size is 50MB." 
       }, { status: 400 });
     }
 

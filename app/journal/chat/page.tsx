@@ -7,6 +7,7 @@ import Navbar from "@/app/components/Navbar";
 import ChatWithJournal from "@/components/chat/ChatWithJournal";
 import { useEffect } from "react";
 
+
 export default function JournalChatPage() {
   const { user, loading } = useUser();
   const router = useRouter();

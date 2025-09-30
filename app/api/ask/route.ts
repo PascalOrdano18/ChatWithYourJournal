@@ -45,98 +45,9 @@ const calculateRelevance = (entryText: string, question: string): number => {
 
 // Removed unused JournalEntry type
 
-// Intent detection for better responses
-type Intent = "media_request" | "entry_lookup" | "general";
+// Removed hardcoded intent detection - now handled by AI model
 
-function detectIntent(question: string): Intent {
-    const s = question.toLowerCase();
-    
-    // More comprehensive media request detection
-    const mediaWords = /(foto|fotos|imagen|imágenes|imagenes|media|picture|pictures|photos|muestra|muéstrame|envia|envía|ver|quiero\s+ver|mostrar|mostrarme|enseña|enseñame|enseñar)/.test(s);
-    
-    // Detect requests for specific content with images
-    const contentWithImages = /(qué\s+(hice|pasó|ocurrió|comí|bebí|vi|fui|estuve)|que\s+(hice|paso|ocurrio|comi|bebi|vi|fui|estuve)|cómo\s+(estaba|estuve|fue)|como\s+(estaba|estuve|fue)|dónde\s+(estuve|fui|estaba)|donde\s+(estuve|fui|estaba))/.test(s);
-    
-    // Detect date-specific requests
-    const dateRequest = /(ayer|hoy|mañana|esta\s+semana|la\s+semana\s+pasada|el\s+mes\s+pasado|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|\d{1,2}\s+de\s+\w+)/.test(s);
-    
-    if (mediaWords || (contentWithImages && dateRequest)) return "media_request";
-    if (contentWithImages) return "entry_lookup";
-    return "general";
-}
-
-// Extract and parse dates from user questions
-function extractDateFromQuestion(question: string): string | null {
-    const s = question.toLowerCase();
-    
-    // Handle relative dates first
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    if (s.includes('ayer')) {
-        return yesterday.toISOString().split('T')[0];
-    }
-    if (s.includes('hoy')) {
-        return today.toISOString().split('T')[0];
-    }
-    if (s.includes('mañana')) {
-        return tomorrow.toISOString().split('T')[0];
-    }
-    
-    // Handle "esta semana" and "la semana pasada"
-    if (s.includes('esta semana')) {
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        return startOfWeek.toISOString().split('T')[0];
-    }
-    if (s.includes('la semana pasada') || s.includes('semana pasada')) {
-        const lastWeek = new Date(today);
-        lastWeek.setDate(today.getDate() - 7);
-        return lastWeek.toISOString().split('T')[0];
-    }
-    
-    // Look for patterns like "22 de agosto", "22 agosto", "agosto 22", etc.
-    const datePatterns = [
-        // "22 de agosto de 2025" or "22 de agosto"
-        /(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+de\s+(\d{4}))?/,
-        // "22 agosto 2025" or "22 agosto"
-        /(\d{1,2})\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+(\d{4}))?/,
-        // "agosto 22, 2025" or "agosto 22"
-        /(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(\d{1,2})(?:,\s+(\d{4}))?/
-    ];
-    
-    const monthNames = {
-        'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
-        'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
-        'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
-    };
-    
-    for (const pattern of datePatterns) {
-        const match = s.match(pattern);
-        if (match) {
-            let day, month, year;
-            
-            if (pattern === datePatterns[0] || pattern === datePatterns[1]) {
-                // "22 de agosto" or "22 agosto"
-                day = match[1];
-                month = monthNames[match[2] as keyof typeof monthNames];
-                year = match[3] || new Date().getFullYear().toString();
-            } else {
-                // "agosto 22"
-                month = monthNames[match[1] as keyof typeof monthNames];
-                day = match[2];
-                year = match[3] || new Date().getFullYear().toString();
-            }
-            
-            return `${year}-${month}-${day.padStart(2, '0')}`;
-        }
-    }
-    
-    return null;
-}
+// Removed hardcoded date extraction - now handled by AI model
 
 // Extract image URLs from BlockNote content
 function extractImageUrls(content: BlockNoteContent[]): string[] {
@@ -155,6 +66,7 @@ function extractImageUrls(content: BlockNoteContent[]): string[] {
     };
     
     walk(content);
+    console.log('Total URLs extracted:', urls);
     return urls;
 }
 
@@ -214,150 +126,35 @@ export async function POST(req: Request){
         return NextResponse.json({ answer: "Hubo un problema sorry" });
     }
 
-    // Detect intent and handle media requests specially
-    const intent = detectIntent(question);
-    
-    // Extract date from question if present
-    const questionDate = extractDateFromQuestion(question);
-    
-    // Calculate relevance scores and find most relevant entries
-    const entriesWithRelevance = entries.map(entry => {
+    // Prepare all journal entries for the AI model to analyze
+    const entriesWithContent = entries.map(entry => {
+        console.log('Processing entry:', entry.entry_date);
+        
         const text = blockNoteToPlainText(entry.content);
-        let relevance = calculateRelevance(text, question);
-        
-        // Boost relevance if the entry date matches the question date
-        if (questionDate && entry.entry_date === questionDate) {
-            relevance = Math.max(relevance, 0.8); // High relevance for exact date match
-        }
-        
         const imageUrls = extractImageUrls(entry.content);
+        
+        console.log('Extracted text:', text.substring(0, 100) + '...');
+        console.log('Extracted image URLs:', imageUrls);
+        
         return {
             ...entry,
             text,
-            relevance,
             imageUrls
         };
     });
 
-    // Sort by relevance and get top 10 most relevant entries
-    const relevantEntries = entriesWithRelevance
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, 10);
-
-    // Handle media requests - return direct image URLs prioritizing date/keywords
-    if (intent === "media_request") {
-        const stopwords = new Set([
-            'de','del','la','el','los','las','en','y','o','a','un','una','unos','unas','que','mi','mis','mio','mía','mias','míos','sobre','para','por','con','al','lo','foto','fotos','imagen','imágenes','imagenes','media','picture','pictures','photos','muestra','muéstrame','envia','envía','ver','quiero'
-        ]);
-        const loweredQuestion = question.toLowerCase();
-        const keywords = loweredQuestion
-            .split(/[^a-záéíóúñü0-9]+/i)
-            .filter((w: string) => w.length > 2 && !stopwords.has(w));
-
-        // Get all entries with images
-        let candidates = entriesWithRelevance.filter(e => e.imageUrls.length > 0);
-
-        if (candidates.length === 0) {
-            return NextResponse.json({
-                answer: "No encontré imágenes en tus entradas del journal."
-            });
-        }
-
-        // If user asked for a specific date, prioritize exact date matches
-        if (questionDate) {
-            const exactDateMatches = candidates.filter(e => e.entry_date === questionDate);
-            if (exactDateMatches.length > 0) {
-                candidates = exactDateMatches;
-            } else {
-                // If no exact date match, look for nearby dates (within 3 days)
-                const targetDate = new Date(questionDate);
-                candidates = candidates.filter(e => {
-                    const entryDate = new Date(e.entry_date);
-                    const diffDays = Math.abs((targetDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
-                    return diffDays <= 3;
-                });
+    // Create context for AI with all relevant information
+    const context = entriesWithContent
+        .map(e => {
+            let entryText = `- ${e.entry_date}: ${e.text}`;
+            if (e.imageUrls.length > 0) {
+                entryText += `\n  Imágenes disponibles: ${e.imageUrls.join(', ')}`;
             }
-        }
-
-        // If still no candidates after date filtering, use all entries with images
-        if (candidates.length === 0) {
-            candidates = entriesWithRelevance.filter(e => e.imageUrls.length > 0);
-        }
-
-        // Calculate better relevance scores
-        const candidatesWithScore = candidates.map(e => {
-            const text = e.text.toLowerCase();
-            let score = e.relevance; // Base relevance from text matching
-            
-            // Boost score for keyword matches in text
-            const keywordHits = keywords.reduce((acc: number, k: string) => {
-                const matches = (text.match(new RegExp(k, 'g')) || []).length;
-                return acc + matches;
-            }, 0);
-            
-            // Boost score for date proximity if no exact date match
-            if (questionDate && e.entry_date !== questionDate) {
-                const targetDate = new Date(questionDate);
-                const entryDate = new Date(e.entry_date);
-                const diffDays = Math.abs((targetDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
-                score += Math.max(0, 0.5 - (diffDays * 0.1)); // Closer dates get higher scores
-            }
-            
-            // Boost score for exact date match
-            if (questionDate && e.entry_date === questionDate) {
-                score += 1.0;
-            }
-            
-            // Boost score for keyword matches
-            score += keywordHits * 0.4;
-            
-            // Boost score for more recent entries (within last 30 days)
-            const entryDate = new Date(e.entry_date);
-            const now = new Date();
-            const daysDiff = (now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
-            if (daysDiff <= 30) {
-                score += 0.2;
-            }
-            
-            return { ...e, mediaScore: score };
-        });
-
-        // Sort by media score and get top candidates
-        candidatesWithScore.sort((a, b) => b.mediaScore - a.mediaScore);
-        
-        // Get top 3 candidates to show variety
-        const topCandidates = candidatesWithScore.slice(0, 3);
-        
-        if (topCandidates.length === 0) {
-            return NextResponse.json({
-                answer: "No encontré imágenes relevantes para tu consulta."
-            });
-        }
-
-        // Format response with better context
-        let response = "";
-        if (topCandidates.length === 1) {
-            const chosen = topCandidates[0];
-            const imageList = chosen.imageUrls.map(url => `![Imagen](${url})`).join('\n');
-            response = `Aquí están las imágenes de ${chosen.entry_date}:\n\n${imageList}`;
-        } else {
-            response = "Encontré estas imágenes relevantes:\n\n";
-            topCandidates.forEach((candidate) => {
-                const imageList = candidate.imageUrls.map(url => `![Imagen](${url})`).join('\n');
-                response += `**${candidate.entry_date}:**\n${imageList}\n\n`;
-            });
-        }
-
-        return NextResponse.json({
-            answer: response
-        });
-    }
-
-    // Create context for AI (use only top relevant entries for better focus)
-    const context = relevantEntries
-        .filter(e => e.relevance > 0.1)
-        .map(e => `- ${e.entry_date}: ${e.text}`)
+            return entryText;
+        })
         .join("\n");
+
+    console.log( "context", context);
 
     // Build prompt with attachments if provided
     let attachmentContext = "";
@@ -392,6 +189,14 @@ export async function POST(req: Request){
         - If the user asks for advice, base it only on the context provided.
         - If the user shares media files, acknowledge them and provide relevant insights based on the journal context.
 
+        ### Special Instructions:
+        - If the user asks for images, photos, or media from their journal, include the image URLs in your response using markdown format: ![Description](URL)
+        - IMPORTANT: Only use the exact image URLs provided in the "Imágenes disponibles" section of the journal context. Copy them exactly as they appear.
+        - If the user asks about specific dates (like "ayer", "hoy", "22 de agosto"), focus on entries from those dates
+        - If the user asks about patterns or trends, analyze the entries to identify them
+        - If the user wants to see specific content, prioritize the most relevant entries
+        - Always be helpful and provide context about when entries were written
+
         ### Data:
         Journal Context:
         ${context}
@@ -405,6 +210,7 @@ export async function POST(req: Request){
         ### Task:
         Provide a clear, reflective, and helpful answer for the user based only on the journal context above.
         Format your answer as a natural conversation.
+        If the user is asking for images or media, include the relevant image URLs in markdown format.
 
         Answer:
         `;

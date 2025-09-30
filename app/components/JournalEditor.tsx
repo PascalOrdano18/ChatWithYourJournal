@@ -68,7 +68,11 @@ export default function JournalEditor({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Upload failed');
+        // Show user-friendly error message
+        const errorMessage = data.error || 'Upload failed';
+        console.error('Upload error:', errorMessage);
+        alert(`Upload failed: ${errorMessage}`);
+        throw new Error(errorMessage);
       }
 
       return data.url;

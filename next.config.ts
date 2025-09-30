@@ -32,6 +32,16 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  // Increase body size limit for file uploads
+  experimental: {
+    serverComponentsExternalPackages: ['sharp'],
+  },
+  // Configure API routes to handle larger payloads
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+  },
 };
 
 export default nextConfig;
