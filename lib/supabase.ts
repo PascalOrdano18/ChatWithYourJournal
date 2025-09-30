@@ -16,25 +16,16 @@ export const createServerSupabaseClient = async () => {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
-                get(name: string) {
-                    return cookieStore.get(name)?.value;
+                getAll() {
+                    return cookieStore.getAll();
                 },
-                set(name: string, value: string, options?: { [key: string]: unknown }) {
+                setAll(cookiesToSet) {
                     try {
-                        cookieStore.set({ name, value, ...options });
+                        cookiesToSet.forEach(({ name, value, options }) => {
+                            cookieStore.set({ name, value, ...options });
+                        });
                     } catch {
-                        // The `set` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
-                    }
-                },
-                remove(name: string, options?: { [key: string]: unknown }) {
-                    try {
-                        cookieStore.set({ name, value: '', ...options });
-                    } catch {
-                        // The `delete` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
+                        // Called from a Server Component. Can be ignored if middleware refreshes sessions.
                     }
                 },
             },
@@ -51,23 +42,16 @@ export const createServerSupabaseClientFromRequest = async (request: Request) =>
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
             cookies: {
-                get(name: string) {
+                getAll() {
                     const cookieHeader = request.headers.get('cookie');
-                    if (!cookieHeader) return undefined;
-                    
-                    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-                        const [key, value] = cookie.trim().split('=');
-                        acc[key] = value;
-                        return acc;
-                    }, {} as Record<string, string>);
-                    
-                    return cookies[name];
+                    if (!cookieHeader) return [] as Array<{ name: string; value: string }>;
+                    return cookieHeader.split(';').map((c) => {
+                        const [rawName, ...rest] = c.trim().split('=');
+                        return { name: rawName, value: rest.join('=') };
+                    });
                 },
-                set() {
-                    // No-op for server-side
-                },
-                remove() {
-                    // No-op for server-side
+                setAll() {
+                    // No-op on API route Request context (cannot set response cookies here)
                 },
             },
         }

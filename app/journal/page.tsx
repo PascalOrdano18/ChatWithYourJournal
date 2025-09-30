@@ -122,6 +122,9 @@ export default function Journal() {
     }
   );
 
+  // Fuerza al editor a remountear cuando cambia el dia o el entry.
+  const editorInstanceKey = `${selectedDate?.toISOString() ?? 'none'}-${todaysEntry?.id ?? 'new'}`;
+
 
   function ReadOnlyNote({ content }: { content: BlockNoteContent[] }) {
     const editor = useCreateBlockNote({ 
@@ -246,7 +249,7 @@ export default function Journal() {
               {/* Rich-text editor */}
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm min-h-[500px] overflow-hidden">
                 <JournalEditor
-                  key={selectedDate?.toISOString()}        /* remount on day change */
+                  key={editorInstanceKey}
                   initialContent={todaysEntry?.content}
                   onChange={setDraft}
                 />

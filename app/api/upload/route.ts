@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       'image/heif',
       'video/mp4',
       'video/webm',
-      'video/quicktime'
+      'video/quicktime',
     ];
     
     console.log('File type validation:', {
